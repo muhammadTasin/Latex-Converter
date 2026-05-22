@@ -1345,8 +1345,19 @@ function parseDocument(text: string): ParsedDocument {
       const trimmed = candidate.trim();
       return Boolean(trimmed) && !isStructuralLine(trimmed);
     });
-    blocks.push({ type: "paragraph", lines: paragraph.values });
-    index = paragraph.nextIndex;
+
+    if (paragraph.values.length) {
+      blocks.push({ type: "paragraph", lines: paragraph.values });
+      index = paragraph.nextIndex;
+    } else {
+      // Fallback: If no parser handled this line but it triggered isStructuralLine,
+      // it's a false positive structure (e.g. a loose Markdown table row). Consume it as a paragraph to prevent infinite loops.
+      const fallbackLine = lines[index].trim();
+      if (fallbackLine) {
+        blocks.push({ type: "paragraph", lines: [fallbackLine] });
+      }
+      index += 1;
+    }
   }
 
   return { title, author, institution, date, blocks: insertKeywordsBlock(blocks, keywords) };

@@ -12,30 +12,37 @@ Module._resolveFilename = function resolveFilename(request, parent, isMain, opti
   if (request.startsWith("@/")) {
     return path.join(workspaceRoot, request.slice(2)) + ".ts";
   }
-
   return originalResolveFilename.call(this, request, parent, isMain, options);
 };
 
 require.extensions[".ts"] = function compileTypeScript(module, filename) {
   const source = fs.readFileSync(filename, "utf8");
-  const compiled = ts.transpileModule(source, {
+  const output = ts.transpileModule(source, {
     compilerOptions: {
       module: ts.ModuleKind.CommonJS,
       target: ts.ScriptTarget.ES2022,
       esModuleInterop: true
     }
-  });
-
-  return module._compile(compiled.outputText, filename);
+  }).outputText;
+  module._compile(output, filename);
 };
 
 const { convertTextToLatex } = require("./lib/latex/converter.ts");
 
-const z7Input4 = `Expected Behavior Check Table
-Check Pass condition
-PDF upload true, App accepts the file or clearly says PDF input is unsupported.
-Text extraction false It fails
-Verbatim`;
+const input = fs.readFileSync("fixtures/hard-research-mixture-input.txt", "utf8");
 
-const result = convertTextToLatex({ text: z7Input4, filename: "z7-4.txt" });
-console.log(result.latex);
+console.log("Running with filename...");
+console.time("convert-file");
+convertTextToLatex({ text: input, filename: "hard-research-mixture-input.txt", conversionMode: "display-source" });
+console.timeEnd("convert-file");
+
+console.log("Running WITHOUT filename...");
+console.time("convert-nofilename");
+convertTextToLatex({ text: input, conversionMode: "display-source" });
+console.timeEnd("convert-nofilename");
+
+console.log("Running with CRLF input...");
+const crlfInput = input.replace(/\r?\n/g, "\r\n");
+console.time("convert-crlf");
+convertTextToLatex({ text: crlfInput, conversionMode: "display-source" });
+console.timeEnd("convert-crlf");

@@ -762,6 +762,12 @@ const z7Res7 = convertTextToLatex({ text: z7Input7, filename: "z7-7.txt" });
 assertExcludes(z7Res7.latex, "\\section*{References}", "Test Z7.7: Should not split Citations and References");
 assertExcludes(z7Res7.latex, "\\bibitem", "Test Z7.7: Should not turn ordinary citation prose into bibitem");
 
+const z7Input8 = `Expected Behavior Check Table
+Check Pass condition
+Download Downloaded output must match preview output exactly.`;
+const z7Res8 = convertTextToLatex({ text: z7Input8, filename: "z7-8.txt" });
+assertIncludes(z7Res8.latex, "Downloaded output must match", "Test Z7.8: Should not hang and should preserve the text");
+
 console.log("LaTeX converter regression tests passed");
 
 function createMinimalPdf(text) {

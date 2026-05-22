@@ -11,6 +11,8 @@ type ValidationIssue = {
   suggestedFix?: string;
 };
 
+type ConversionMode = "display-source" | "recover-raw";
+
 type ConversionMetadata = {
   filename?: string;
   fileSize?: number;
@@ -22,6 +24,7 @@ type ConversionMetadata = {
   outputChecksum: string;
   status: "converted" | "preserved" | "failed";
   largeInput: boolean;
+  conversionMode?: ConversionMode;
 };
 
 type ConvertResponse = {
@@ -136,6 +139,7 @@ export function ConverterShell() {
   const [sourceFile, setSourceFile] = useState<SourceFile | null>(null);
   const [latex, setLatex] = useState("");
   const [language, setLanguage] = useState("en");
+  const [conversionMode, setConversionMode] = useState<ConversionMode>("display-source");
   const [title, setTitle] = useState("Generated Research Draft");
   const [author, setAuthor] = useState("Author Name");
   const [warnings, setWarnings] = useState<string[]>([]);
@@ -189,7 +193,8 @@ export function ConverterShell() {
           title,
           author,
           filename: fileInfo?.name,
-          fileSize: fileInfo?.size
+          fileSize: fileInfo?.size,
+          conversionMode
         })
       });
       const data = (await response.json()) as ConvertResponse;
@@ -507,6 +512,32 @@ export function ConverterShell() {
               ))}
             </select>
           </label>
+
+          <fieldset className="mode-fieldset">
+            <legend>Conversion Mode</legend>
+            <div className="mode-toggle">
+              <button
+                type="button"
+                className={conversionMode === "display-source" ? "mode-option active" : "mode-option"}
+                onClick={() => setConversionMode("display-source")}
+                aria-pressed={conversionMode === "display-source"}
+                title="Escape embedded LaTeX so it displays as readable text in the generated document"
+              >
+                <FileText size={14} />
+                Display as Text
+              </button>
+              <button
+                type="button"
+                className={conversionMode === "recover-raw" ? "mode-option active" : "mode-option"}
+                onClick={() => setConversionMode("recover-raw")}
+                aria-pressed={conversionMode === "recover-raw"}
+                title="When a complete LaTeX document is found, recover it as editable raw .tex source"
+              >
+                <ScanText size={14} />
+                Recover Raw LaTeX
+              </button>
+            </div>
+          </fieldset>
 
           <label className="text-upload-zone">
             <input key={`source-${resetKey}`} type="file" accept=".tex,.latex,.txt,.md,.pdf,text/plain,text/markdown,application/pdf" onChange={(event) => loadTextFile(event.target.files?.[0] ?? null)} />
