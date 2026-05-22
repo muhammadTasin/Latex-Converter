@@ -1878,15 +1878,16 @@ function buildDocument(options: BuildDocumentOptions): string {
   const institution = options.institution?.trim() ? `\\\\${escapeLatex(options.institution.trim())}` : "";
   const date = options.date?.trim() ? escapeLatex(options.date.trim()) : "\\today";
   const packages = options.packages ?? {};
+  const body = protectDocumentLevelCommandsInBody(options.body);
   
   const macros = [];
-  if (options.body.includes("\\mathbb{R}")) macros.push("\\newcommand{\\R}{\\mathbb{R}}");
-  if (options.body.includes("\\mathbb{C}")) macros.push("\\newcommand{\\C}{\\mathbb{C}}");
-  if (options.body.includes("\\mathbb{Q}")) macros.push("\\newcommand{\\Q}{\\mathbb{Q}}");
-  if (options.body.includes("\\mathrm{d}")) macros.push("\\newcommand{\\dd}{\\,\\mathrm{d}}");
-  if (options.body.includes("\\norm{")) macros.push("\\newcommand{\\norm}[1]{\\left\\lVert #1 \\right\\rVert}");
-  if (options.body.includes("\\abs{")) macros.push("\\newcommand{\\abs}[1]{\\left\\lvert #1 \\right\\rvert}");
-  if (options.body.includes("\\Ric")) macros.push("\\DeclareMathOperator{\\Ric}{Ric}");
+  if (body.includes("\\mathbb{R}")) macros.push("\\newcommand{\\R}{\\mathbb{R}}");
+  if (body.includes("\\mathbb{C}")) macros.push("\\newcommand{\\C}{\\mathbb{C}}");
+  if (body.includes("\\mathbb{Q}")) macros.push("\\newcommand{\\Q}{\\mathbb{Q}}");
+  if (body.includes("\\mathrm{d}")) macros.push("\\newcommand{\\dd}{\\,\\mathrm{d}}");
+  if (body.includes("\\norm{")) macros.push("\\newcommand{\\norm}[1]{\\left\\lVert #1 \\right\\rVert}");
+  if (body.includes("\\abs{")) macros.push("\\newcommand{\\abs}[1]{\\left\\lvert #1 \\right\\rvert}");
+  if (body.includes("\\Ric")) macros.push("\\DeclareMathOperator{\\Ric}{Ric}");
 
   return [
     "\\documentclass[12pt]{article}",
@@ -1903,7 +1904,7 @@ function buildDocument(options: BuildDocumentOptions): string {
     "\\usepackage{geometry}",
     "\\usepackage{hyperref}",
     "\\geometry{margin=1in}",
-    packages.amsthm && !options.body.includes("\\newtheorem{theorem}") ? "\\newtheorem{theorem}{Theorem}" : "",
+    packages.amsthm && !body.includes("\\newtheorem{theorem}") ? "\\newtheorem{theorem}{Theorem}" : "",
     ...macros,
     "",
     `% Language profile: ${options.languageCode}`,
@@ -1914,10 +1915,88 @@ function buildDocument(options: BuildDocumentOptions): string {
     "\\begin{document}",
     "\\maketitle",
     "",
-    options.body,
+    body,
     "",
     "\\end{document}"
   ].join("\n");
+}
+
+function protectDocumentLevelCommandsInBody(body: string): string {
+  const lines = body.split("\n");
+  const output: string[] = [];
+  let index = 0;
+  let protectedEnvironmentDepth = 0;
+
+  while (index < lines.length) {
+    const line = lines[index];
+    const trimmed = line.trim();
+
+    if (/^\\begin\{(?:verbatim|lstlisting)\}/.test(trimmed)) {
+      protectedEnvironmentDepth += 1;
+      output.push(line);
+      index += 1;
+      continue;
+    }
+
+    if (/^\\end\{(?:verbatim|lstlisting)\}/.test(trimmed)) {
+      if (protectedEnvironmentDepth > 0) {
+        protectedEnvironmentDepth -= 1;
+      }
+      output.push(line);
+      index += 1;
+      continue;
+    }
+
+    if (protectedEnvironmentDepth > 0 || !isDocumentLevelCommandLine(trimmed)) {
+      output.push(line);
+      index += 1;
+      continue;
+    }
+
+    const collected: string[] = [];
+    let insideDocumentExample = false;
+
+    while (index < lines.length) {
+      const current = lines[index];
+      const currentTrimmed = current.trim();
+
+      if (!collected.length && !isDocumentLevelCommandLine(currentTrimmed)) {
+        break;
+      }
+
+      if (collected.length && !insideDocumentExample && !isDocumentLevelCommandLine(currentTrimmed)) {
+        break;
+      }
+
+      collected.push(current);
+
+      if (/^\\begin\{document\}/.test(currentTrimmed)) {
+        insideDocumentExample = true;
+      }
+
+      index += 1;
+
+      if (/^\\end\{document\}/.test(currentTrimmed)) {
+        break;
+      }
+
+      if (!insideDocumentExample) {
+        const nextTrimmed = lines[index]?.trim() ?? "";
+        if (!nextTrimmed || !isDocumentLevelCommandLine(nextTrimmed)) {
+          break;
+        }
+      }
+    }
+
+    output.push(renderVerbatimBlock(collected));
+  }
+
+  return output.join("\n");
+}
+
+function isDocumentLevelCommandLine(line: string): boolean {
+  return /^\\(?:documentclass|usepackage|newcommand|renewcommand|newtheorem|DeclareMathOperator|geometry|title|author|date)\b/.test(line) ||
+    /^\\(?:begin|end)\{document\}/.test(line);
 }
 
 function parseSectionLabel(line: string): { heading: SectionHeading; detail: string } | null {
@@ -2813,6 +2892,11 @@ function validateLatex(
     });
   }
 
+  const bodyCommandIssue = findDocumentLevelCommandInBodyIssue(checkedLatex, lineAt);
+  if (bodyCommandIssue) {
+    issues.push(bodyCommandIssue);
+  }
+
   const rawFence = /```/.exec(checkedLatex);
   if (rawFence) {
     issues.push({
@@ -3051,6 +3135,36 @@ function validateEnvironmentBalanceAndNesting(latex: string, lineAt: LineLookup)
   }
 
   return issues;
+}
+
+function findDocumentLevelCommandInBodyIssue(latex: string, lineAt: LineLookup): ValidationIssue | null {
+  const beginMatch = /\\begin\{document\}/.exec(latex);
+  const endMatch = /\\end\{document\}/g;
+  let lastEndMatch: RegExpExecArray | null = null;
+  let currentEndMatch: RegExpExecArray | null;
+
+  while ((currentEndMatch = endMatch.exec(latex))) {
+    lastEndMatch = currentEndMatch;
+  }
+
+  if (!beginMatch || !lastEndMatch || lastEndMatch.index <= beginMatch.index) {
+    return null;
+  }
+
+  const bodyStart = beginMatch.index + beginMatch[0].length;
+  const body = latex.slice(bodyStart, lastEndMatch.index);
+  const commandMatch = /(^|\n)[ \t]*(\\(?:documentclass|usepackage|newcommand|renewcommand|newtheorem|DeclareMathOperator|geometry|title|author|date)\b|\\(?:begin|end)\{document\})/.exec(body);
+
+  if (!commandMatch) {
+    return null;
+  }
+
+  return {
+    severity: "error",
+    message: "Document-level LaTeX command was found inside the document body.",
+    line: lineAt(bodyStart + (commandMatch.index ?? 0) + commandMatch[1].length),
+    suggestedFix: "Move preamble commands before \\begin{document}, or wrap code examples in a verbatim/code block."
+  };
 }
 
 function findUnmatchedSingleDollarIssue(latex: string, lineAt: LineLookup): ValidationIssue | null {
@@ -3353,7 +3467,7 @@ function isRawLatexBoundaryLine(line: string): boolean {
     /^\\documentclass(?:\[[^\]]*\])?\{[^}]+\}/.test(trimmed) ||
     /^\\begin\{[^}]+\}/.test(trimmed) ||
     /^\\(?:section|subsection|subsubsection|paragraph)\*?\{/.test(trimmed) ||
-    /^\\(?:usepackage|newcommand|renewcommand|newtheorem)\b/.test(trimmed)
+    /^\\(?:usepackage|newcommand|renewcommand|newtheorem|DeclareMathOperator|geometry|title|author|date)\b/.test(trimmed)
   );
 }
 

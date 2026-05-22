@@ -58,6 +58,16 @@ function assertExcludes(value, snippet, label) {
   assert(!value.includes(snippet), `${label}: expected output not to include ${snippet}`);
 }
 
+function maskVerbatimLike(value) {
+  return value.replace(/(\\begin\{(?:verbatim|lstlisting)\})([\s\S]*?)(\\end\{(?:verbatim|lstlisting)\})/g, (_match, begin, body, end) => {
+    return `${begin}${body.replace(/[^\n]/g, " ")}${end}`;
+  });
+}
+
+function countRealDocumentclass(value) {
+  return count(maskVerbatimLike(value), /\\documentclass(?:\[[^\]]*\])?\{[^}]+\}/g);
+}
+
 function findRawFenceOutsideVerbatim(value) {
   const lines = value.split("\n");
   let protectedDepth = 0;
@@ -865,6 +875,80 @@ assertIncludes(advancedResult.latex, "\\ce{2H2 + O2 -> 2H2O}", "Test Z9: chemist
 assertIncludes(advancedResult.latex, "\\begin{tikzcd}", "Test Z9: commutative diagram should use tikzcd");
 assertExcludes(advancedResult.latex, "\\begin{itemize}", "Test Z9: leading minus math line should not become itemize");
 assertIncludes(advancedResult.latex, "- x^{2} + y^{2} = z^{2}", "Test Z9: leading minus math line should remain math");
+
+const latexCodeExamplePrompt = convertTextToLatex({
+  text: String.raw`Use a preamble like:
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+\begin{document}
+Hello
+\end{document}`,
+  filename: "latex-code-example-prompt.txt"
+});
+assert(!latexCodeExamplePrompt.validationIssues.some((issue) => /Duplicate \\documentclass|Duplicate \\begin\{document\}|Duplicate \\end\{document\}|Document-level LaTeX command/.test(issue.message)), "Test Z10: LaTeX code example should not create document-level validation errors");
+assert(countRealDocumentclass(latexCodeExamplePrompt.latex) === 1, "Test Z10: generated output should contain exactly one real documentclass");
+assert(latexCodeExamplePrompt.latex.includes("\\begin{verbatim}") || latexCodeExamplePrompt.latex.includes("\\textbackslash{}documentclass"), "Test Z10: example documentclass should be protected as code or escaped text");
+
+const documentBodyOnlyExample = convertTextToLatex({
+  text: String.raw`Example body:
+\title{Demo}
+\author{Name}
+\date{May 2026}
+\begin{document}
+Hello
+\end{document}`,
+  filename: "document-body-only-example.txt"
+});
+assert(!documentBodyOnlyExample.validationIssues.some((issue) => /Duplicate \\begin\{document\}|Duplicate \\end\{document\}|Document-level LaTeX command/.test(issue.message)), "Test Z10b: document body example should be converted to literal code before validation");
+assertIncludes(documentBodyOnlyExample.latex, "\\begin{verbatim}", "Test Z10b: document-level body commands should be protected as verbatim");
+assert(countRealDocumentclass(documentBodyOnlyExample.latex) === 1, "Test Z10b: body-only example should keep only the generated real documentclass");
+
+const hardMathSample = convertTextToLatex({
+  text: String.raw`The almost-impossible test document
+
+Let Ω ⊂ ℝⁿ be a bounded C²-domain and let x₁ ∈ Ω with ε² > 0.
+
+Equation System:
+a = b + c
+f(x) = x² + ε²
+
+Matrix Representation:
+A = [ [α₁, β₂], [γ₃, δ₄] ]
+
+Q(D) = 1 if C ≥ 0.90
+Q(D) = 0 if C < 0.90
+
+Chemistry:
+2H2 + O2 -> 2H2O
+
+Commutative Diagram:
+A -> B
+↓    ↓
+C -> D
+
+- x² + y² = z²`,
+  filename: "almost-impossible-hard-math-sample.txt"
+});
+assert(!hardMathSample.validationIssues.some((issue) => issue.severity === "error"), "Test Z11: hard math sample should have no fatal validation errors");
+assert(countRealDocumentclass(hardMathSample.latex) === 1, "Test Z11: hard math sample should contain exactly one real documentclass");
+for (const rawSymbol of ["Ω", "⊂", "ℝⁿ", "x₁", "ε²", "α₁"]) {
+  assertExcludes(hardMathSample.latex, rawSymbol, `Test Z11: raw Unicode math symbol ${rawSymbol} should be converted`);
+}
+assertIncludes(hardMathSample.latex, "\\Omega", "Test Z11: Omega should be converted");
+assertIncludes(hardMathSample.latex, "\\mathbb{R}^{n}", "Test Z11: R^n should be converted");
+assertIncludes(hardMathSample.latex, "\\begin{bmatrix}", "Test Z11: matrix should use bmatrix");
+assertIncludes(hardMathSample.latex, "\\begin{cases}", "Test Z11: piecewise should use cases");
+assertIncludes(hardMathSample.latex, "\\ce{2H2 + O2 -> 2H2O}", "Test Z11: chemistry should use mhchem ce");
+assertIncludes(hardMathSample.latex, "\\begin{tikzcd}", "Test Z11: diagram should use tikzcd");
+assertExcludes(hardMathSample.latex, "\\begin{itemize}", "Test Z11: minus math lines should not become itemize");
+
+const fencedLatexCodeExample = convertTextToLatex({
+  text: "Here is literal source:\n\n```latex\n\\documentclass{article}\n\\usepackage{amsmath}\n\\begin{document}\nHi\n\\end{document}\n```",
+  filename: "fenced-latex-code-example.txt"
+});
+assert(!fencedLatexCodeExample.validationIssues.some((issue) => /Duplicate \\documentclass|Duplicate \\begin\{document\}|Duplicate \\end\{document\}|Document-level LaTeX command/.test(issue.message)), "Test Z12: fenced LaTeX code should not execute as structure");
+assertIncludes(fencedLatexCodeExample.latex, "\\begin{verbatim}", "Test Z12: fenced LaTeX should become verbatim");
+assert(countRealDocumentclass(fencedLatexCodeExample.latex) === 1, "Test Z12: fenced example should not add a second real documentclass");
 
 console.log("LaTeX converter regression tests passed");
 
