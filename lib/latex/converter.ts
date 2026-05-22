@@ -35,6 +35,9 @@ type PackageRequirements = {
   algpseudocode: boolean;
   amsthm: boolean;
   booktabs: boolean;
+  mathtools: boolean;
+  tikzcd: boolean;
+  mhchem: boolean;
 };
 
 type BuildDocumentOptions = {
@@ -55,6 +58,7 @@ type SectionHeading =
   | "Matrix Representation"
   | "System Architecture"
   | "Equation"
+  | "Equation System"
   | "Table"
   | "Algorithm"
   | "Optimization"
@@ -124,6 +128,7 @@ const protectedEnvironments = new Set([
   "proof",
   "algorithm",
   "algorithmic",
+  "tikzcd",
   "abstract"
 ]);
 
@@ -689,7 +694,10 @@ function inferPackageRequirements(text: string): PackageRequirements {
     algorithm: /\\begin\{algorithm\}/.test(text) || usesAlgorithmicxSyntax,
     algpseudocode: usesAlgorithmicxSyntax,
     amsthm: /\\begin\{(?:theorem|proof)\}/.test(text),
-    booktabs: /\\(?:toprule|midrule|bottomrule)\b/.test(text)
+    booktabs: /\\(?:toprule|midrule|bottomrule)\b/.test(text),
+    mathtools: /\\begin\{(?:vmatrix|bmatrix|cases|aligned)\}/.test(text) || /\\text\{/.test(text),
+    tikzcd: /\\begin\{tikzcd\}/.test(text),
+    mhchem: /\\ce\{/.test(text)
   };
 }
 
@@ -711,6 +719,18 @@ function ensureFullDocumentRequirements(text: string, requirements: PackageRequi
 
   if (requirements.amsthm && !hasUsePackage(normalizedText, "amsthm")) {
     insertions.push("\\usepackage{amsthm}");
+  }
+
+  if (requirements.mathtools && !hasUsePackage(normalizedText, "mathtools")) {
+    insertions.push("\\usepackage{mathtools}");
+  }
+
+  if (requirements.tikzcd && !hasUsePackage(normalizedText, "tikz-cd")) {
+    insertions.push("\\usepackage{tikz-cd}");
+  }
+
+  if (requirements.mhchem && !hasUsePackage(normalizedText, "mhchem")) {
+    insertions.push("\\usepackage[version=4]{mhchem}");
   }
 
   if (requirements.amsthm && /\\begin\{theorem\}/.test(normalizedText) && !/\\newtheorem\{theorem\}/.test(normalizedText)) {
@@ -1354,6 +1374,15 @@ function parseDocument(text: string): ParsedDocument {
         }
       }
 
+      if (sectionLabel.heading === "Equation System" && !sectionLabel.detail) {
+        const equations = collectEquationSequenceBlock(lines, index + 1);
+        if (equations) {
+          blocks.push({ type: "displayMath", body: equations.body });
+          index = equations.nextIndex;
+          continue;
+        }
+      }
+
       index += 1;
       continue;
     }
@@ -1383,6 +1412,20 @@ function parseDocument(text: string): ParsedDocument {
     if (piecewise) {
       blocks.push({ type: "equation", body: piecewise.body });
       index = piecewise.nextIndex;
+      continue;
+    }
+
+    const chemBlock = collectChemistryBlock(lines, index);
+    if (chemBlock) {
+      blocks.push({ type: "displayMath", body: chemBlock.body });
+      index = chemBlock.nextIndex;
+      continue;
+    }
+
+    const diagramBlock = collectCommutativeDiagramBlock(lines, index);
+    if (diagramBlock) {
+      blocks.push({ type: "displayMath", body: diagramBlock.body });
+      index = diagramBlock.nextIndex;
       continue;
     }
 
@@ -1449,8 +1492,6 @@ function parseDocument(text: string): ParsedDocument {
       blocks.push({ type: "paragraph", lines: paragraph.values });
       index = paragraph.nextIndex;
     } else {
-      // Fallback: If no parser handled this line but it triggered isStructuralLine,
-      // it's a false positive structure (e.g. a loose Markdown table row). Consume it as a paragraph to prevent infinite loops.
       const fallbackLine = lines[index].trim();
       if (fallbackLine) {
         blocks.push({ type: "paragraph", lines: [fallbackLine] });
@@ -1459,7 +1500,58 @@ function parseDocument(text: string): ParsedDocument {
     }
   }
 
-  return { title, author, institution, date, blocks: insertKeywordsBlock(blocks, keywords) };
+  const mergedBlocks = mergeEquationBlocks(blocks);
+  return { title, author, institution, date, blocks: insertKeywordsBlock(mergedBlocks, keywords) };
+}
+
+function mergeEquationBlocks(blocks: Block[]): Block[] {
+  const merged: Block[] = [];
+  let index = 0;
+
+  while (index < blocks.length) {
+    const block = blocks[index];
+    if (block.type !== "equation" || !isMergeableEquationBody(block.body)) {
+      merged.push(block);
+      index += 1;
+      continue;
+    }
+
+    const equations = [block.body];
+    let cursor = index + 1;
+
+    while (cursor < blocks.length && blocks[cursor].type === "equation" && isMergeableEquationBody((blocks[cursor] as Extract<Block, { type: "equation" }>).body)) {
+      equations.push((blocks[cursor] as Extract<Block, { type: "equation" }>).body);
+      cursor += 1;
+    }
+
+    if (equations.length < 2) {
+      merged.push(block);
+      index += 1;
+      continue;
+    }
+
+    merged.push({
+      type: "displayMath",
+      body: ["\\begin{aligned}", equations.map(formatAlignedEquationRow).join(" \\\\\n"), "\\end{aligned}"].join("\n")
+    });
+    index = cursor;
+  }
+
+  return merged;
+}
+
+function isMergeableEquationBody(body: string): boolean {
+  return (
+    !/\\begin\{(?:bmatrix|pmatrix|vmatrix|Vmatrix|cases|aligned|array|tikzcd)\}/.test(body) &&
+    !/\\ce\{/.test(body) &&
+    !/\n/.test(body) &&
+    /=/.test(body)
+  );
+}
+
+function formatAlignedEquationRow(body: string): string {
+  const equation = cleanEquation(body);
+  return equation.includes("&") ? equation : equation.replace(/\s*=\s*/, " &= ");
 }
 
 function collectEmbeddedLatexDocumentSnippet(lines: string[], startIndex: number): { lines: string[]; nextIndex: number } | null {
@@ -1668,7 +1760,8 @@ function renderParagraph(lines: string[]): string {
 }
 
 function renderTextPreservingInlineMath(value: string): string {
-  return convertInlineSyntax(escapeTextPreservingInlineMath(value));
+  const preprocessed = preprocessUnicodeMath(value);
+  return convertInlineSyntax(escapeTextPreservingInlineMath(preprocessed));
 }
 
 function escapeTextPreservingInlineMath(value: string): string {
@@ -1785,25 +1878,34 @@ function buildDocument(options: BuildDocumentOptions): string {
   const institution = options.institution?.trim() ? `\\\\${escapeLatex(options.institution.trim())}` : "";
   const date = options.date?.trim() ? escapeLatex(options.date.trim()) : "\\today";
   const packages = options.packages ?? {};
-  const optionalPackages = [
-    packages.algorithm ? "\\usepackage{algorithm}" : null,
-    packages.algpseudocode ? "\\usepackage{algpseudocode}" : null
-  ].filter(Boolean);
+  const body = protectDocumentLevelCommandsInBody(options.body);
+  
+  const macros = [];
+  if (body.includes("\\mathbb{R}")) macros.push("\\newcommand{\\R}{\\mathbb{R}}");
+  if (body.includes("\\mathbb{C}")) macros.push("\\newcommand{\\C}{\\mathbb{C}}");
+  if (body.includes("\\mathbb{Q}")) macros.push("\\newcommand{\\Q}{\\mathbb{Q}}");
+  if (body.includes("\\mathrm{d}")) macros.push("\\newcommand{\\dd}{\\,\\mathrm{d}}");
+  if (body.includes("\\norm{")) macros.push("\\newcommand{\\norm}[1]{\\left\\lVert #1 \\right\\rVert}");
+  if (body.includes("\\abs{")) macros.push("\\newcommand{\\abs}[1]{\\left\\lvert #1 \\right\\rvert}");
+  if (body.includes("\\Ric")) macros.push("\\DeclareMathOperator{\\Ric}{Ric}");
 
   return [
     "\\documentclass[12pt]{article}",
     "\\usepackage[utf8]{inputenc}",
     "\\usepackage[T1]{fontenc}",
     "\\usepackage{amsmath, amssymb}",
-    "\\usepackage{amsthm}",
-    "\\usepackage{booktabs}",
-    ...optionalPackages,
+    packages.mathtools ? "\\usepackage{mathtools}" : "",
+    packages.amsthm ? "\\usepackage{amsthm}" : "",
+    packages.booktabs ? "\\usepackage{booktabs}" : "",
+    packages.algorithm ? "\\usepackage{algorithm}" : "",
+    packages.algpseudocode ? "\\usepackage{algpseudocode}" : "",
+    packages.tikzcd ? "\\usepackage{tikz-cd}" : "",
+    packages.mhchem ? "\\usepackage[version=4]{mhchem}" : "",
     "\\usepackage{geometry}",
     "\\usepackage{hyperref}",
     "\\geometry{margin=1in}",
-    "\\newtheorem{theorem}{Theorem}",
-    "\\newcommand{\\norm}[1]{\\left\\lVert #1 \\right\\rVert}",
-    "\\newcommand{\\abs}[1]{\\left\\lvert #1 \\right\\rvert}",
+    packages.amsthm && !body.includes("\\newtheorem{theorem}") ? "\\newtheorem{theorem}{Theorem}" : "",
+    ...macros,
     "",
     `% Language profile: ${options.languageCode}`,
     `\\title{${title}}`,
@@ -1813,15 +1915,93 @@ function buildDocument(options: BuildDocumentOptions): string {
     "\\begin{document}",
     "\\maketitle",
     "",
-    options.body,
+    body,
     "",
     "\\end{document}"
   ].join("\n");
 }
 
+function protectDocumentLevelCommandsInBody(body: string): string {
+  const lines = body.split("\n");
+  const output: string[] = [];
+  let index = 0;
+  let protectedEnvironmentDepth = 0;
+
+  while (index < lines.length) {
+    const line = lines[index];
+    const trimmed = line.trim();
+
+    if (/^\\begin\{(?:verbatim|lstlisting)\}/.test(trimmed)) {
+      protectedEnvironmentDepth += 1;
+      output.push(line);
+      index += 1;
+      continue;
+    }
+
+    if (/^\\end\{(?:verbatim|lstlisting)\}/.test(trimmed)) {
+      if (protectedEnvironmentDepth > 0) {
+        protectedEnvironmentDepth -= 1;
+      }
+      output.push(line);
+      index += 1;
+      continue;
+    }
+
+    if (protectedEnvironmentDepth > 0 || !isDocumentLevelCommandLine(trimmed)) {
+      output.push(line);
+      index += 1;
+      continue;
+    }
+
+    const collected: string[] = [];
+    let insideDocumentExample = false;
+
+    while (index < lines.length) {
+      const current = lines[index];
+      const currentTrimmed = current.trim();
+
+      if (!collected.length && !isDocumentLevelCommandLine(currentTrimmed)) {
+        break;
+      }
+
+      if (collected.length && !insideDocumentExample && !isDocumentLevelCommandLine(currentTrimmed)) {
+        break;
+      }
+
+      collected.push(current);
+
+      if (/^\\begin\{document\}/.test(currentTrimmed)) {
+        insideDocumentExample = true;
+      }
+
+      index += 1;
+
+      if (/^\\end\{document\}/.test(currentTrimmed)) {
+        break;
+      }
+
+      if (!insideDocumentExample) {
+        const nextTrimmed = lines[index]?.trim() ?? "";
+        if (!nextTrimmed || !isDocumentLevelCommandLine(nextTrimmed)) {
+          break;
+        }
+      }
+    }
+
+    output.push(renderVerbatimBlock(collected));
+  }
+
+  return output.join("\n");
+}
+
+function isDocumentLevelCommandLine(line: string): boolean {
+  return /^\\(?:documentclass|usepackage|newcommand|renewcommand|newtheorem|DeclareMathOperator|geometry|title|author|date)\b/.test(line) ||
+    /^\\(?:begin|end)\{document\}/.test(line);
+}
+
 function parseSectionLabel(line: string): { heading: SectionHeading; detail: string } | null {
   const match =
-    /^(introduction|problem statement|mathematical model|loss function|matrix representation|system architecture|equation|table|algorithm|optimization|results|discussion|conclusion):\s*(.*)$/i.exec(
+    /^(introduction|problem statement|mathematical model|loss function|matrix representation|system architecture|equation system|equation|table|algorithm|optimization|results|discussion|conclusion):\s*(.*)$/i.exec(
       line
     );
   if (!match) {
@@ -1906,6 +2086,9 @@ function extractEquationBody(line: string, context?: string): string | null {
 
 function looksLikeProseWithMathSymbols(value: string): boolean {
   const trimmed = value.trim();
+  if (/^[A-Za-z]\s*=/.test(trimmed)) {
+    return false;
+  }
   return /^(for|if|while|when|where|given|let|assume|compute|solve|update|we|the|a|an|in|this|that|these|those)\b/i.test(trimmed) || /:\s*$/.test(trimmed);
 }
 
@@ -1960,38 +2143,97 @@ function collectFollowingEquation(lines: string[], startIndex: number): { body: 
   return equation ? { body: equation, nextIndex: collected.nextIndex } : null;
 }
 
-function collectPiecewiseBlock(lines: string[], startIndex: number): { body: string; nextIndex: number } | null {
-  const first = parsePiecewiseLine(lines[startIndex]?.trim() ?? "");
-  if (!first) {
-    return null;
-  }
-
-  const pieces = [first];
-  let index = startIndex + 1;
+function collectEquationSequenceBlock(lines: string[], startIndex: number): { body: string; nextIndex: number } | null {
+  const equations: string[] = [];
+  let index = startIndex;
 
   while (index < lines.length) {
-    const parsed = parsePiecewiseLine(lines[index].trim());
-    if (!parsed || parsed.left !== first.left) {
+    const line = lines[index].trim();
+    if (!line || isDocumentBoundaryLine(line)) {
       break;
     }
 
-    pieces.push(parsed);
+    const equation = extractEquationBody(line);
+    if (!equation || !isMergeableEquationBody(equation)) {
+      break;
+    }
+
+    equations.push(equation);
     index += 1;
   }
 
-  if (pieces.length < 2) {
+  if (equations.length < 2) {
     return null;
   }
 
-  const rows = pieces.map((piece, pieceIndex) => {
-    const ending = pieceIndex === pieces.length - 1 ? "." : ",";
-    return `${transformMathText(piece.value)}, & ${transformMathText(piece.condition)}${ending}`;
-  });
-
   return {
-    body: [`${transformMathText(first.left)} =`, "\\begin{cases}", rows.join(" \\\\\n"), "\\end{cases}"].join("\n"),
+    body: ["\\begin{aligned}", equations.map(formatAlignedEquationRow).join(" \\\\\n"), "\\end{aligned}"].join("\n"),
     nextIndex: index
   };
+}
+
+function collectPiecewiseBlock(lines: string[], startIndex: number): { body: string; nextIndex: number } | null {
+  const firstLine = lines[startIndex]?.trim() ?? "";
+  
+  // Handle single-line traditional parsing
+  const first = parsePiecewiseLine(firstLine);
+  if (first) {
+    const pieces = [first];
+    let index = startIndex + 1;
+    while (index < lines.length) {
+      const parsed = parsePiecewiseLine(lines[index].trim());
+      if (!parsed || parsed.left !== first.left) break;
+      pieces.push(parsed);
+      index += 1;
+    }
+    if (pieces.length >= 2) {
+      const rows = pieces.map((p, i) => `${transformMathText(p.value)}, & ${transformMathText(p.condition)}${i === pieces.length - 1 ? "." : ","}`);
+      return { body: [`${transformMathText(first.left)} =`, "\\begin{cases}", rows.join(" \\\\\n"), "\\end{cases}"].join("\n"), nextIndex: index };
+    }
+  }
+
+  // Handle multi-line block parsing like:
+  // F(x,y) =
+  // { expression, if condition,
+  //   expression, otherwise. }
+  const blockMatch = /^([A-Za-z0-9_()]+)\s*=$/.exec(firstLine);
+  if (blockMatch && lines[startIndex + 1]?.trim().startsWith("{")) {
+    const pieces: string[] = [];
+    let index = startIndex + 1;
+    let inBlock = true;
+    
+    // First line might be `{ expression, if condition`
+    const firstBlockLine = lines[index].trim().replace(/^\{\s*/, "");
+    if (firstBlockLine) {
+      pieces.push(firstBlockLine);
+    }
+    index++;
+    
+    while (index < lines.length && inBlock) {
+      let line = lines[index].trim();
+      if (!line) { index++; continue; }
+      if (line.endsWith("}")) {
+        line = line.slice(0, -1).trim();
+        inBlock = false;
+      }
+      if (line) pieces.push(line);
+      index++;
+    }
+    
+    if (pieces.length >= 2) {
+      const rows = pieces.map(p => {
+        const match = /^(.+?),\s+(if\s+|otherwise\.?|)(.+)$/i.exec(p);
+        if (match) {
+          const cond = match[2].toLowerCase().includes("otherwise") ? "\\text{otherwise}" : transformMathText(match[3].replace(/[.;]$/, ""));
+          return `${transformMathText(match[1].trim())}, & ${cond}`;
+        }
+        return `${transformMathText(p)}, &`;
+      });
+      return { body: [`${transformMathText(blockMatch[1])} =`, "\\begin{cases}", rows.join(" \\\\\n"), "\\end{cases}"].join("\n"), nextIndex: index };
+    }
+  }
+
+  return null;
 }
 
 function parsePiecewiseLine(line: string): { left: string; value: string; condition: string } | null {
@@ -2005,6 +2247,102 @@ function parsePiecewiseLine(line: string): { left: string; value: string; condit
     value: match[2].trim(),
     condition: match[3].trim()
   };
+}
+
+function collectChemistryBlock(lines: string[], startIndex: number): { body: string; nextIndex: number } | null {
+  const firstLine = lines[startIndex]?.trim() ?? "";
+  const labelMatch = /^chem(?:istry|ical equation)?\s*:\s*(.*)$/i.exec(firstLine);
+
+  if (labelMatch) {
+    const inlineEquation = labelMatch[1].trim();
+    if (inlineEquation && looksLikeChemistryEquation(inlineEquation)) {
+      return { body: `\\ce{${normalizeChemistryExpression(inlineEquation)}}`, nextIndex: startIndex + 1 };
+    }
+
+    const collected = collectWhile(lines, startIndex + 1, (candidate) => {
+      const trimmed = candidate.trim();
+      return Boolean(trimmed) && !isDocumentBoundaryLine(trimmed) && looksLikeChemistryEquation(trimmed);
+    });
+
+    if (collected.values.length) {
+      return {
+        body: collected.values.map((line) => `\\ce{${normalizeChemistryExpression(line.trim())}}`).join(" \\\\\n"),
+        nextIndex: collected.nextIndex
+      };
+    }
+  }
+
+  if (looksLikeChemistryEquation(firstLine)) {
+    return { body: `\\ce{${normalizeChemistryExpression(firstLine)}}`, nextIndex: startIndex + 1 };
+  }
+
+  return null;
+}
+
+function looksLikeChemistryEquation(value: string): boolean {
+  const trimmed = value.trim();
+  if (!/(?:->|→|=)/.test(trimmed)) {
+    return false;
+  }
+
+  if (/\\(?:rightarrow|leftarrow|Rightarrow|Leftrightarrow|begin)\b/.test(trimmed)) {
+    return false;
+  }
+
+  const formulaTokens = trimmed.match(/\b\d*(?:[A-Z][a-z]?\d*)+\b/g) ?? [];
+  return formulaTokens.length >= 2;
+}
+
+function normalizeChemistryExpression(value: string): string {
+  return value.replace(/→/g, "->").replace(/\s+/g, " ").trim();
+}
+
+function collectCommutativeDiagramBlock(lines: string[], startIndex: number): { body: string; nextIndex: number } | null {
+  const firstLine = lines[startIndex]?.trim() ?? "";
+  const labelledDiagram = /^commutative\s+diagram\s*:?\s*$/i.test(firstLine);
+  const start = labelledDiagram ? startIndex + 1 : startIndex;
+  const collected = collectWhile(lines, start, (candidate) => {
+    const trimmed = candidate.trim();
+    return Boolean(trimmed) && !isDocumentBoundaryLine(trimmed) && /(?:->|←|→|↓|\\downarrow|\\to)/.test(trimmed);
+  });
+
+  if (!collected.values.length) {
+    return null;
+  }
+
+  const body = renderCommutativeDiagram(collected.values);
+  if (!body) {
+    return null;
+  }
+
+  return { body, nextIndex: collected.nextIndex };
+}
+
+function renderCommutativeDiagram(lines: string[]): string | null {
+  const meaningful = lines.map((line) => line.trim()).filter(Boolean);
+  const horizontalRows = meaningful.filter((line) => /(?:->|→|\\to)/.test(line));
+
+  if (horizontalRows.length < 2) {
+    return null;
+  }
+
+  const firstRow = parseDiagramHorizontalRow(horizontalRows[0]);
+  const secondRow = parseDiagramHorizontalRow(horizontalRows[1]);
+  if (!firstRow || !secondRow) {
+    return null;
+  }
+
+  return [
+    "\\begin{tikzcd}",
+    `${firstRow[0]} \\arrow[r] \\arrow[d] & ${firstRow[1]} \\arrow[d] \\\\`,
+    `${secondRow[0]} \\arrow[r] & ${secondRow[1]}`,
+    "\\end{tikzcd}"
+  ].join("\n");
+}
+
+function parseDiagramHorizontalRow(line: string): [string, string] | null {
+  const parts = line.split(/(?:->|→|\\to)/).map((part) => transformMathText(part.trim())).filter(Boolean);
+  return parts.length === 2 ? [parts[0], parts[1]] : null;
 }
 
 function collectOptimizationBlock(lines: string[], startIndex: number): { body: string; nextIndex: number } | null {
@@ -2188,18 +2526,32 @@ function collectBracketedMatrixExpression(lines: string[], startIndex: number): 
 }
 
 function convertMatrixExpression(value: string): string | null {
-  const match = /^([A-Za-z][A-Za-z0-9_]*)\s*=\s*(.+)$/.exec(value.trim());
-  if (!match) {
+  let matrixText = value.trim();
+  let prefix = "";
+  
+  const assignmentMatch = /^([A-Za-z][A-Za-z0-9_]*)\s*=\s*(.+)$/.exec(matrixText);
+  if (assignmentMatch) {
+    prefix = `${assignmentMatch[1]} = \n`;
+    matrixText = assignmentMatch[2].trim();
+  }
+  
+  let env = "bmatrix";
+  if (matrixText.startsWith("|") && matrixText.endsWith("|")) {
+    env = "vmatrix";
+    matrixText = matrixText.slice(1, -1).trim();
+  } else if (matrixText.startsWith("[") && matrixText.endsWith("]")) {
+    matrixText = matrixText.slice(1, -1).trim();
+  } else if (!assignmentMatch) {
     return null;
   }
 
-  const matrixText = match[2].trim();
   const rows = extractMatrixRows(matrixText);
   if (rows.length < 2) {
     return null;
   }
 
-  return renderMatrix(match[1], rows);
+  const formattedRows = rows.map((row) => `  ${row.map(formatMathToken).join(" & ")}`).join(" \\\\\n");
+  return `${prefix}\\begin{${env}}\n${formattedRows}\n\\end{${env}}`;
 }
 
 function extractMatrixRows(matrixText: string): string[][] {
@@ -2237,7 +2589,7 @@ function renderEquation(body: string): string {
     return "";
   }
 
-  if (equation.includes("\\begin{bmatrix}")) {
+  if (/\\begin\{(?:bmatrix|pmatrix|vmatrix|Vmatrix)\}/.test(equation)) {
     return ["\\[", equation, "\\]"].join("\n");
   }
 
@@ -2245,7 +2597,7 @@ function renderEquation(body: string): string {
 }
 
 function cleanEquation(body: string): string {
-  if (body.includes("\\begin{bmatrix}")) {
+  if (/\\begin\{(?:bmatrix|pmatrix|vmatrix|Vmatrix)\}/.test(body)) {
     return body.trim();
   }
 
@@ -2260,6 +2612,7 @@ function cleanEquation(body: string): string {
 function stripWordHyphens(value: string): string {
   return value.replace(/\b([A-Za-z]{2,})-([A-Za-z]{2,})\b/g, "$1 $2");
 }
+
 
 function isMathExpression(value: string): boolean {
   if (isPageMarkerLine(value) || isChecklistLine(value)) {
@@ -2310,7 +2663,7 @@ function extractMathFromSentence(value: string, context?: string): string {
 }
 
 function transformMathText(value: string): string {
-  return value
+  return normalizeMathScripts(translateUnicodeMath(value)
     .replace(
       /\bx equals negative b plus or minus square root of b squared minus 4ac over 2a\b/gi,
       "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}"
@@ -2332,6 +2685,7 @@ function transformMathText(value: string): string {
     .replace(/\bh_\{?theta\}?\s*\(/g, "h_{\\theta}(")
     .replace(/\by_hat\b/g, "\\hat{y}")
     .replace(/\bE_(total|ocr|structure|latex)\b/g, "E_{\\text{$1}}")
+    .replace(/\bE_\{(total|ocr|structure|latex)\}/g, "E_{\\text{$1}}")
     .replace(/(?<!\\)\btheta\b/g, "\\theta")
     .replace(/(?<!\\)\bepsilon\b/g, "\\epsilon")
     .replace(/(?<!\\)\bdelta\b/g, "\\delta")
@@ -2342,7 +2696,7 @@ function transformMathText(value: string): string {
     .replace(/(?<!\\)\bint\b/gi, "\\int")
     .replace(/\b([A-Za-z])_([A-Za-z0-9]{2,})\b/g, "$1_{$2}")
     .replace(/\bJ\s*\(\\theta\)/g, "J(\\theta)")
-    .replace(/\b1\s*\/\s*n\b/g, "\\frac{1}{n}");
+    .replace(/\b1\s*\/\s*n\b/g, "\\frac{1}{n}"));
 }
 
 function formatEquationText(value: string): string {
@@ -2364,9 +2718,9 @@ function shouldUseSizedBrackets(value: string): boolean {
 }
 
 function formatMathToken(value: string): string {
-  return transformMathText(value)
+  return normalizeMathScripts(transformMathText(value)
     .replace(/^([A-Za-z])(\d+)$/, "$1_{$2}")
-    .replace(/^([A-Za-z]+)_([A-Za-z0-9]+)$/, "$1_{$2}");
+    .replace(/^([A-Za-z]+)_([A-Za-z0-9]+)$/, "$1_{$2}"));
 }
 
 function isAcademicMathExpression(value: string): boolean {
@@ -2536,6 +2890,11 @@ function validateLatex(
       message: "Output does not end with \\end{document}.",
       suggestedFix: "Check for truncated output or content appended after the document terminator."
     });
+  }
+
+  const bodyCommandIssue = findDocumentLevelCommandInBodyIssue(checkedLatex, lineAt);
+  if (bodyCommandIssue) {
+    issues.push(bodyCommandIssue);
   }
 
   const rawFence = /```/.exec(checkedLatex);
@@ -2778,6 +3137,36 @@ function validateEnvironmentBalanceAndNesting(latex: string, lineAt: LineLookup)
   return issues;
 }
 
+function findDocumentLevelCommandInBodyIssue(latex: string, lineAt: LineLookup): ValidationIssue | null {
+  const beginMatch = /\\begin\{document\}/.exec(latex);
+  const endMatch = /\\end\{document\}/g;
+  let lastEndMatch: RegExpExecArray | null = null;
+  let currentEndMatch: RegExpExecArray | null;
+
+  while ((currentEndMatch = endMatch.exec(latex))) {
+    lastEndMatch = currentEndMatch;
+  }
+
+  if (!beginMatch || !lastEndMatch || lastEndMatch.index <= beginMatch.index) {
+    return null;
+  }
+
+  const bodyStart = beginMatch.index + beginMatch[0].length;
+  const body = latex.slice(bodyStart, lastEndMatch.index);
+  const commandMatch = /(^|\n)[ \t]*(\\(?:documentclass|usepackage|newcommand|renewcommand|newtheorem|DeclareMathOperator|geometry|title|author|date)\b|\\(?:begin|end)\{document\})/.exec(body);
+
+  if (!commandMatch) {
+    return null;
+  }
+
+  return {
+    severity: "error",
+    message: "Document-level LaTeX command was found inside the document body.",
+    line: lineAt(bodyStart + (commandMatch.index ?? 0) + commandMatch[1].length),
+    suggestedFix: "Move preamble commands before \\begin{document}, or wrap code examples in a verbatim/code block."
+  };
+}
+
 function findUnmatchedSingleDollarIssue(latex: string, lineAt: LineLookup): ValidationIssue | null {
   let openDollarLine: number | null = null;
 
@@ -2862,7 +3251,8 @@ function findTabularRowsOutsideAllowedEnvironment(latex: string): number | null 
     "bmatrix",
     "Bmatrix",
     "vmatrix",
-    "Vmatrix"
+    "Vmatrix",
+    "tikzcd"
   ]);
   const lines = latex.split("\n");
 
@@ -3077,7 +3467,7 @@ function isRawLatexBoundaryLine(line: string): boolean {
     /^\\documentclass(?:\[[^\]]*\])?\{[^}]+\}/.test(trimmed) ||
     /^\\begin\{[^}]+\}/.test(trimmed) ||
     /^\\(?:section|subsection|subsubsection|paragraph)\*?\{/.test(trimmed) ||
-    /^\\(?:usepackage|newcommand|renewcommand|newtheorem)\b/.test(trimmed)
+    /^\\(?:usepackage|newcommand|renewcommand|newtheorem|DeclareMathOperator|geometry|title|author|date)\b/.test(trimmed)
   );
 }
 
@@ -3295,8 +3685,71 @@ function parseTableRows(lines: string[]): string[][] {
   });
 }
 
+const unicodeMathMap: Record<string, string> = {
+  "Ω": "\\Omega", "ℝ": "\\mathbb{R}", "ℂ": "\\mathbb{C}", "ℚ": "\\mathbb{Q}", "ℤ": "\\mathbb{Z}", "ℕ": "\\mathbb{N}",
+  "∂": "\\partial", "∫": "\\int", "∑": "\\sum", "√": "\\sqrt", "∀": "\\forall", "∃": "\\exists", "≥": "\\geq", "≤": "\\leq", "≠": "\\neq",
+  "≈": "\\approx", "≡": "\\equiv", "⇒": "\\Rightarrow", "⇔": "\\Leftrightarrow", "→": "\\rightarrow",
+  "∞": "\\infty", "∇": "\\nabla", "×": "\\times", "÷": "\\div", "±": "\\pm", "∓": "\\mp",
+  "∈": "\\in", "∉": "\\notin", "⊂": "\\subset", "⊆": "\\subseteq", "∪": "\\cup", "∩": "\\cap",
+  "α": "\\alpha", "β": "\\beta", "γ": "\\gamma", "δ": "\\delta", "ε": "\\varepsilon", "ζ": "\\zeta",
+  "η": "\\eta", "θ": "\\theta", "ι": "\\iota", "κ": "\\kappa", "λ": "\\lambda", "μ": "\\mu",
+  "ν": "\\nu", "ξ": "\\xi", "π": "\\pi", "ρ": "\\rho", "σ": "\\sigma", "τ": "\\tau",
+  "υ": "\\upsilon", "φ": "\\varphi", "χ": "\\chi", "ψ": "\\psi", "ω": "\\omega",
+  "Γ": "\\Gamma", "Δ": "\\Delta", "Θ": "\\Theta", "Λ": "\\Lambda", "Ξ": "\\Xi", "Π": "\\Pi",
+  "Σ": "\\Sigma", "Υ": "\\Upsilon", "Φ": "\\Phi", "Ψ": "\\Psi",
+  "⁰": "^0", "¹": "^1", "²": "^2", "³": "^3", "⁴": "^4", "⁵": "^5", "⁶": "^6", "⁷": "^7", "⁸": "^8", "⁹": "^9",
+  "⁺": "^+", "⁻": "^-", "ⁿ": "^n",
+  "₀": "_0", "₁": "_1", "₂": "_2", "₃": "_3", "₄": "_4", "₅": "_5", "₆": "_6", "₈": "_8", "₉": "_9",
+  "₇": "_7"
+};
+
+const unicodeMathRunRegex = new RegExp(`(?:[A-Za-z]+)?[${Object.keys(unicodeMathMap).map(escapeCharacterClass).join("")}]+`, "g");
+
+function preprocessUnicodeMath(value: string): string {
+  const parts = value.split(/(\\\([^\n]*?\\\)|(?<!\\)\$[^$\n]+(?<!\\)\$|\\\[.*?\\\])/g);
+  return parts.map(part => {
+    if (!part) return "";
+    if (/^\\\(/.test(part) || /^(?<!\\)\$/.test(part) || /^\\\[/.test(part)) {
+      let translated = part;
+      let changed = false;
+      for (const [uni, tex] of Object.entries(unicodeMathMap)) {
+        if (translated.includes(uni)) {
+          changed = true;
+        }
+        translated = translated.split(uni).join(tex);
+      }
+      return changed ? normalizeMathScripts(translated) : translated;
+    }
+
+    return part.replace(unicodeMathRunRegex, (match) => `$${normalizeMathScripts(translateUnicodeMath(match))}$`);
+  }).join("");
+}
+
+function translateUnicodeMath(text: string): string {
+  let translated = text;
+  for (const [uni, tex] of Object.entries(unicodeMathMap)) {
+    translated = translated.split(uni).join(` ${tex} `);
+  }
+  translated = translated.replace(/\s+([_^])/g, "$1").replace(/([_^])\s+/g, "$1");
+  return normalizeMathScripts(translated.replace(/\s+/g, " ").trim());
+}
+
+function normalizeMathScripts(value: string): string {
+  return value
+    .replace(/(\\mathbb\{[A-Z]\}|\\[A-Za-z]+|[A-Za-z0-9])\^([A-Za-z0-9+-]+)/g, "$1^{$2}")
+    .replace(/(\\mathbb\{[A-Z]\}|\\[A-Za-z]+|[A-Za-z0-9])_([A-Za-z0-9+-]+)/g, "$1_{$2}");
+}
+
+function escapeCharacterClass(value: string): string {
+  return value.replace(/[\\\]\-^]/g, "\\$&");
+}
+
 function isListLine(line: string): boolean {
   const trimmed = line.trim();
+  // Never treat a leading minus as a list if the rest is math
+  if (trimmed.startsWith("- ") && (isMathExpression(trimmed.slice(2)) || /[\\]/.test(trimmed))) {
+    return false;
+  }
   return !parseNumberedSectionHeading(trimmed) && !isNumberedHeadingLine(trimmed) && (/^([-*+]\s+|\d+[.)]\s+)/.test(trimmed) || isChecklistLine(trimmed));
 }
 

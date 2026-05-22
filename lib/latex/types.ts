@@ -1,5 +1,7 @@
 export type LatexSnippetMode = "display-source" | "recover-raw";
 
+
+
 export type LatexConversionInput = {
   text: string;
   language?: string;
