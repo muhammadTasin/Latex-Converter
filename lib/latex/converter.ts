@@ -497,7 +497,7 @@ function normalizeExtractedExpectedBehaviorTables(text: string): string {
     ];
     for (const row of rows) {
       let check = "";
-      let passCondition = row.value.replace(/\r?\n/g, " ");
+      let passCondition = row.value.replace(/\r?\n/g, " ").replace(/^[|\s]+|[|\s]+$/g, "").trim();
       const commaIndex = passCondition.indexOf(",");
       if (commaIndex !== -1 && commaIndex < 25) {
         check = passCondition.slice(0, commaIndex).trim();
@@ -2203,7 +2203,7 @@ function isMathExpression(value: string): boolean {
 }
 
 function formatTableRow(row: string[]): string {
-  return row.map((cell) => escapeLatex(cleanExtractedTableCell(cell))).join(" & ") + String.raw` \\`;
+  return row.map((cell) => renderTextPreservingInlineMath(cleanExtractedTableCell(cell))).join(" & ") + String.raw` \\`;
 }
 
 function cleanExtractedTableCell(cell: string): string {
@@ -3196,14 +3196,22 @@ function isMathLikePipeLine(line: string): boolean {
 }
 
 function parseTableRows(lines: string[]): string[][] {
-  return lines.map((line) =>
-    line
-      .trim()
-      .replace(/^\|/, "")
-      .replace(/\|$/, "")
-      .split("|")
-      .map((cell) => cell.trim())
-  );
+  return lines.map((line) => {
+    let trimmed = line.trim().replace(/^\|/, "").replace(/\|$/, "");
+    
+    // Mask | inside inline math and code blocks
+    const parts = trimmed.split(/(\\\(.*?\\\)|\\\[.*?\\\]|\$.*?\$|`.*?`)/g);
+    let masked = "";
+    for (let i = 0; i < parts.length; i++) {
+      if (i % 2 === 1) {
+        masked += parts[i].replace(/\|/g, "__PIPE_MASK__");
+      } else {
+        masked += parts[i];
+      }
+    }
+    
+    return masked.split("|").map((cell) => cell.replace(/__PIPE_MASK__/g, "|").trim());
+  });
 }
 
 function isListLine(line: string): boolean {

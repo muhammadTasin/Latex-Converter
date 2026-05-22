@@ -772,15 +772,21 @@ const z7Input9 = `Expected Behavior Check Table
 Check Pass condition
 | PDF upload | App accepts the file or clearly says PDF input is unsupported. |
 | Text extraction | Backslashes, braces, underscores, dollar signs, and vertical bars are not silently corrupted. |
-| Inline math | Real inline math such as a^2+b^2=c^2 remains real math. |
+| Inline math | Real inline math such as \\( a^2+b^2=c^2 \\) remains real math. |
 | Code blocks | Commands inside fenced code blocks remain literal text. |
-| Tables | Markdown tables and LaTeX tables are reconstructed without confusing separators. |
+| Tables | Markdown tables and LaTeX tables with \\( |x| \\) are reconstructed without confusing separators. |
 | Validation | Missing END_TEST_MARKER_OMEGA_999 must fail conversion. |
 | Download | Downloaded output must match preview output exactly. |`;
 const z7Res9 = convertTextToLatex({ text: z7Input9, filename: "z7-9.txt" });
 assertIncludes(z7Res9.latex, "Code blocks", "Test Z7.9: Should include Code blocks row");
 assertIncludes(z7Res9.latex, "Tables", "Test Z7.9: Should include Tables row");
 assertIncludes(z7Res9.latex, "Missing END\\_TEST\\_MARKER\\_OMEGA\\_999", "Test Z7.9: Should include Validation row");
+assertIncludes(z7Res9.latex, "\\begin{tabular}{ll}", "Test Z7.9: Should use two columns {ll}");
+assertExcludes(z7Res9.latex, "& x &", "Test Z7.9: Should not split on | inside math");
+assertIncludes(z7Res9.latex, "\\( |x| \\)", "Test Z7.9: Should preserve \\( |x| \\) intact");
+assertExcludes(z7Res9.latex, "a\\textasciicircum{}2", "Test Z7.9: Should not escape inline math in table cells");
+assertIncludes(z7Res9.latex, "\\( a^2+b^2=c^2 \\)", "Test Z7.9: Should preserve \\( a^2+b^2=c^2 \\) intact");
+
 if (/^\|.*\|$/m.test(z7Res9.latex)) {
   throw new Error("Test Z7.9 Failed: Leftover raw pipe rows found outside the table");
 }
