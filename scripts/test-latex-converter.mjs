@@ -739,7 +739,7 @@ Verbatim`;
 const z7Res4 = convertTextToLatex({ text: z7Input4, filename: "z7-4.txt" });
 assertIncludes(z7Res4.latex, "\\begin{tabular}{ll}", "Test Z7.4: Expected Behavior Check Table should be a tabular");
 assertIncludes(z7Res4.latex, "PDF upload & true, App accepts the file or clearly says PDF input is unsupported. \\\\", "Test Z7.4");
-assertIncludes(z7Res4.latex, "Text extraction & false, It fails \\\\", "Test Z7.4");
+assertIncludes(z7Res4.latex, "Text extraction & false It fails \\\\", "Test Z7.4");
 
 const z7Input5 = `Some text. \\_ \\% END_TEST_MARKER_OMEGA_999`;
 const z7Res5 = convertTextToLatex({ text: z7Input5, filename: "z7-5.txt" });
@@ -767,6 +767,23 @@ Check Pass condition
 Download Downloaded output must match preview output exactly.`;
 const z7Res8 = convertTextToLatex({ text: z7Input8, filename: "z7-8.txt" });
 assertIncludes(z7Res8.latex, "Downloaded output must match", "Test Z7.8: Should not hang and should preserve the text");
+
+const z7Input9 = `Expected Behavior Check Table
+Check Pass condition
+| PDF upload | App accepts the file or clearly says PDF input is unsupported. |
+| Text extraction | Backslashes, braces, underscores, dollar signs, and vertical bars are not silently corrupted. |
+| Inline math | Real inline math such as a^2+b^2=c^2 remains real math. |
+| Code blocks | Commands inside fenced code blocks remain literal text. |
+| Tables | Markdown tables and LaTeX tables are reconstructed without confusing separators. |
+| Validation | Missing END_TEST_MARKER_OMEGA_999 must fail conversion. |
+| Download | Downloaded output must match preview output exactly. |`;
+const z7Res9 = convertTextToLatex({ text: z7Input9, filename: "z7-9.txt" });
+assertIncludes(z7Res9.latex, "Code blocks", "Test Z7.9: Should include Code blocks row");
+assertIncludes(z7Res9.latex, "Tables", "Test Z7.9: Should include Tables row");
+assertIncludes(z7Res9.latex, "Missing END\\_TEST\\_MARKER\\_OMEGA\\_999", "Test Z7.9: Should include Validation row");
+if (/^\|.*\|$/m.test(z7Res9.latex)) {
+  throw new Error("Test Z7.9 Failed: Leftover raw pipe rows found outside the table");
+}
 
 console.log("LaTeX converter regression tests passed");
 

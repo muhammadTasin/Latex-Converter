@@ -520,40 +520,33 @@ function extractKnownExpectedBehaviorRows(body: string): Array<{ key: string; va
     return [];
   }
 
-  const rowKeys = ["PDF upload", "Text extraction", "Math/code blocks", "Math code blocks", "Validation", "Download"] as const;
+  const rowKeys = EXPECTED_BEHAVIOR_KNOWN_KEYS;
   const positions: Array<{ key: string; index: number; length: number }> = [];
   const lower = compact.toLowerCase();
+  let searchFrom = 0;
 
   for (const key of rowKeys) {
     const loweredKey = key.toLowerCase();
-    let searchFrom = 0;
-    while (searchFrom < lower.length) {
-      const index = lower.indexOf(loweredKey, searchFrom);
-      if (index === -1) {
-        break;
-      }
-
+    let index = lower.indexOf(loweredKey, searchFrom);
+    while (index !== -1) {
       const before = index === 0 ? " " : compact[index - 1];
       const after = compact[index + key.length] ?? " ";
       if (/\s/.test(before) && /\s/.test(after)) {
         positions.push({ key: normalizeExpectedBehaviorKey(key), index, length: key.length });
+        searchFrom = index + key.length;
+        break;
       }
-
-      searchFrom = index + loweredKey.length;
+      index = lower.indexOf(loweredKey, index + 1);
     }
   }
 
-  const uniquePositions = positions
-    .sort((a, b) => a.index - b.index)
-    .filter((position, index, sorted) => index === 0 || position.index !== sorted[index - 1].index);
-
   const rows: Array<{ key: string; value: string }> = [];
-  for (let index = 0; index < uniquePositions.length; index += 1) {
-    const current = uniquePositions[index];
-    const next = uniquePositions[index + 1];
+  for (let i = 0; i < positions.length; i += 1) {
+    const current = positions[i];
+    const next = positions[i + 1];
     const value = trimExtractedExpectedBehaviorValue(compact.slice(current.index + current.length, next?.index ?? compact.length));
 
-    if (value && !isLikelyExtractedTableKey(value)) {
+    if (value) {
       rows.push({ key: current.key, value });
     }
   }
@@ -572,6 +565,25 @@ function trimExtractedExpectedBehaviorValue(value: string): string {
       ""
     )
     .trim();
+}
+
+const EXPECTED_BEHAVIOR_KNOWN_KEYS = ["PDF upload", "Text extraction", "Inline math", "Code blocks", "Tables", "Math/code blocks", "Math code blocks", "Validation", "Download"] as const;
+
+function matchKnownExpectedBehaviorKey(line: string): { key: string; value: string } | null {
+  const trimmed = line.trim();
+  for (const key of EXPECTED_BEHAVIOR_KNOWN_KEYS) {
+    if (trimmed.toLowerCase().startsWith(key.toLowerCase())) {
+      const rest = trimmed.slice(key.length);
+      // Key must be followed by whitespace or end of string
+      if (!rest || /^\s/.test(rest)) {
+        const value = rest.trim();
+        if (value) {
+          return { key: normalizeExpectedBehaviorKey(key), value };
+        }
+      }
+    }
+  }
+  return null;
 }
 
 function preserveLatexSource(text: string, input: LatexConversionInput, languageCode: string): string {
@@ -726,7 +738,10 @@ function convertMixedMarkdownLatex(text: string, input: LatexConversionInput, la
     }
 
     if (isMarkdownTableStart(lines, index)) {
-      const table = collectWhile(lines, index, isTableLine);
+      const table = collectWhile(lines, index, (line) => {
+        const trimmed = line.trim();
+        return /^\|.*\|$/.test(trimmed) || isTableLine(trimmed);
+      });
       bodyParts.push(renderTable(parseTableRows(table.values)));
       blocks.push({ type: "table", rows: parseTableRows(table.values) });
       index = table.nextIndex;
@@ -1319,7 +1334,10 @@ function parseDocument(text: string): ParsedDocument {
     }
 
     if (isMarkdownTableStart(lines, index)) {
-      const collected = collectWhile(lines, index, isTableLine);
+      const collected = collectWhile(lines, index, (line) => {
+        const trimmed = line.trim();
+        return /^\|.*\|$/.test(trimmed) || isTableLine(trimmed);
+      });
       blocks.push({ type: "table", rows: parseTableRows(collected.values) });
       index = collected.nextIndex;
       continue;
@@ -3049,14 +3067,40 @@ function collectExtractedKeyValueTable(lines: string[], startIndex: number): { t
       break;
     }
 
+    // Skip Markdown separator lines (|---|---|)
+    if (/^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$/.test(rawLine)) {
+      index += 1;
+      continue;
+    }
+
+    // Handle pipe-formatted rows: | Key | Value |
+    const pipeMatch = /^\|\s*(.+?)\s*\|\s*(.+?)\s*\|$/.exec(rawLine);
+    if (pipeMatch) {
+      const pipeKey = pipeMatch[1].trim();
+      const pipeValue = pipeMatch[2].trim();
+      if (isLikelyExtractedTableKey(pipeKey)) {
+        rows.push([pipeKey, pipeValue]);
+        index += 1;
+        continue;
+      }
+    }
+
     const inlineMatch = /^(.*?)\s+(true|false|pass|fail)(.*)$/i.exec(rawLine);
     if (inlineMatch) {
       const extractedKey = inlineMatch[1].trim();
       const extractedValue = `${inlineMatch[2]}, ${inlineMatch[3]}`.trim().replace(/,\s*,/g, ",").replace(/\s+/g, " ");
-      if (!isLikelyExtractedTableKey(extractedKey)) {
-        break;
+      if (isLikelyExtractedTableKey(extractedKey)) {
+        rows.push([extractedKey, extractedValue.replace(/^,/, "").trim()]);
+        index += 1;
+        continue;
       }
-      rows.push([extractedKey, extractedValue.replace(/^,/, "").trim()]);
+      // Fall through to try known-key or simple key-value parsing below
+    }
+
+    // Try extracting a known expected-behavior key from the start of the line
+    const knownKeyMatch = matchKnownExpectedBehaviorKey(rawLine);
+    if (knownKeyMatch) {
+      rows.push([knownKeyMatch.key, knownKeyMatch.value]);
       index += 1;
       continue;
     }
