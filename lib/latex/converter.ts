@@ -2804,6 +2804,7 @@ const knownLatexEnvironments = new Set([
   "description",
   "thebibliography",
   "verbatim",
+  "verse",
   "lemma",
   "proposition",
   "corollary",
@@ -2822,7 +2823,16 @@ const knownLatexEnvironments = new Set([
   "smallmatrix",
   "subequations",
   "tikzpicture",
-  "lstlisting"
+  "lstlisting",
+  "environment",
+  "plainenvironment",
+  "contextenvironment",
+  "pgfmanualentry",
+  "codeexample",
+  "command",
+  "stylekey",
+  "key",
+  "shape"
 ]);
 
 function validateLatex(

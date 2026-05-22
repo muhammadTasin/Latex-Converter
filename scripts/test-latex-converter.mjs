@@ -256,6 +256,59 @@ assert(count(testH, /\\begin\{document\}/g) === 1, "Test H: duplicate begin docu
 assert(count(testH, /\\end\{document\}/g) === 1, "Test H: duplicate end document");
 assertExcludes(testH, String.raw`\textbackslash{}section`, "Test H");
 
+const latexDocumentationEnvironments = convertTextToLatex({
+  text: String.raw`\documentclass{article}
+\begin{document}
+\begin{verse}
+|\usepackage{tikz-cd}|
+\end{verse}
+\begin{environment}{tikzcd}
+Documentation for an environment.
+\end{environment}
+\begin{pgfmanualentry}
+Manual entry text.
+\end{pgfmanualentry}
+\begin{codeexample}
+\begin{tikzcd}
+A \arrow[r] & B
+\end{tikzcd}
+\end{codeexample}
+\begin{command}{\arrow}
+Command documentation.
+\end{command}
+\begin{stylekey}{/tikz/commutative diagrams/row sep}
+Style key documentation.
+\end{stylekey}
+\begin{key}{/tikz/commutative diagrams/column sep}
+Key documentation.
+\end{key}
+\begin{plainenvironment}{tikzcd}
+Plain TeX environment docs.
+\end{plainenvironment}
+\begin{contextenvironment}{tikzcd}
+ConTeXt environment docs.
+\end{contextenvironment}
+\begin{shape}
+Shape docs.
+\end{shape}
+\end{document}`,
+  filename: "latex-documentation-environments.tex"
+});
+assert(latexDocumentationEnvironments.metadata.status !== "failed", "Test H2: known documentation environments should not fail validation");
+assert(!latexDocumentationEnvironments.validationIssues.some((issue) => /not in the converter's known environment list/.test(issue.message)), "Test H2: known documentation environments should not produce unknown-environment info");
+
+const balancedUnknownEnvironment = convertTextToLatex({
+  text: String.raw`\documentclass{article}
+\begin{document}
+\begin{custommanualblock}
+Balanced custom documentation content.
+\end{custommanualblock}
+\end{document}`,
+  filename: "balanced-unknown-environment.tex"
+});
+assert(balancedUnknownEnvironment.metadata.status !== "failed", "Test H3: balanced unknown environments should not fail conversion");
+assert(balancedUnknownEnvironment.validationIssues.some((issue) => issue.severity === "info" && /custommanualblock/.test(issue.message)), "Test H3: balanced unknown environments should remain informational");
+
 const mixedMarkdown = convertTextToLatex({
   text: String.raw`# Research Notes
 This keeps inline math $\alpha + \beta$ intact.
