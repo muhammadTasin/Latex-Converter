@@ -374,7 +374,7 @@ function shouldPreserveInputExactly(text: string): boolean {
 }
 
 function hasResearchStructure(text: string): boolean {
-  return researchLabelRegex.test(text) || inlineResearchLabelRegex.test(text) || numberedResearchHeadingRegex.test(text);
+  return researchLabelRegex.test(text) || inlineResearchLabelRegex.test(text) || numberedResearchHeadingRegex.test(text) || /Expected\s+Behavior\s+Check\s+Table/i.test(text);
 }
 
 function getConversionMode(input: LatexConversionInput): LatexSnippetMode {
@@ -3197,7 +3197,7 @@ function isMathLikePipeLine(line: string): boolean {
 
 function parseTableRows(lines: string[]): string[][] {
   return lines.map((line) => {
-    let trimmed = line.trim().replace(/^\|/, "").replace(/\|$/, "");
+    const trimmed = line.trim().replace(/^\|/, "").replace(/\|$/, "");
     
     // Mask | inside inline math and code blocks
     const parts = trimmed.split(/(\\\(.*?\\\)|\\\[.*?\\\]|\$.*?\$|`.*?`)/g);
