@@ -58,6 +58,10 @@ function assertExcludes(value, snippet, label) {
   assert(!value.includes(snippet), `${label}: expected output not to include ${snippet}`);
 }
 
+function hasDisplayDelimiterIssue(result, delimiter) {
+  return result.validationIssues.some((issue) => issue.message.includes(`Unmatched ${delimiter} display math delimiter`));
+}
+
 function maskVerbatimLike(value) {
   return value.replace(/(\\begin\{(?:verbatim|lstlisting)\})([\s\S]*?)(\\end\{(?:verbatim|lstlisting)\})/g, (_match, begin, body, end) => {
     return `${begin}${body.replace(/[^\n]/g, " ")}${end}`;
@@ -135,6 +139,56 @@ const testD = convert(String.raw`\[
 assert(count(testD, /\\begin\{cases\}/g) === 1, "Test D: expected one cases environment");
 assertExcludes(testD, String.raw`\begin{table}`, "Test D");
 assertExcludes(testD, String.raw`\begin{equation}`, "Test D");
+
+const displayDelimiterValid = convertTextToLatex({
+  text: String.raw`\[
+x + y = z
+\]`,
+  filename: "display-delimiter-valid.tex"
+});
+assert(!hasDisplayDelimiterIssue(displayDelimiterValid, "\\["), "Test D2: valid display math should not report unmatched opener");
+assert(!hasDisplayDelimiterIssue(displayDelimiterValid, "\\]"), "Test D2: valid display math should not report unmatched closer");
+
+const casesRowSpacing = convertTextToLatex({
+  text: String.raw`\[
+\begin{cases}
+a, & \text{if } x > 0, \\[4pt]
+b, & \text{otherwise}
+\end{cases}
+\]`,
+  filename: "cases-row-spacing.tex"
+});
+assertIncludes(casesRowSpacing.latex, String.raw`\\[4pt]`, "Test D3: cases row spacing should be preserved");
+assert(!hasDisplayDelimiterIssue(casesRowSpacing, "\\["), "Test D3: row spacing should not report unmatched display opener");
+assert(!hasDisplayDelimiterIssue(casesRowSpacing, "\\]"), "Test D3: row spacing should not report unmatched display closer");
+
+const alignedRowSpacing = convertTextToLatex({
+  text: String.raw`\[
+\begin{aligned}
+a &= b \\[8pt]
+c &= d \\[4pt]
+\end{aligned}
+\]`,
+  filename: "aligned-row-spacing.tex"
+});
+assertIncludes(alignedRowSpacing.latex, String.raw`\\[8pt]`, "Test D4: aligned row spacing 8pt should be preserved");
+assertIncludes(alignedRowSpacing.latex, String.raw`\\[4pt]`, "Test D4: aligned row spacing 4pt should be preserved");
+assert(!hasDisplayDelimiterIssue(alignedRowSpacing, "\\["), "Test D4: multiple row spacing commands should not report unmatched display opener");
+assert(!hasDisplayDelimiterIssue(alignedRowSpacing, "\\]"), "Test D4: multiple row spacing commands should not report unmatched display closer");
+
+const unmatchedDisplayOpener = convertTextToLatex({
+  text: String.raw`\[
+x + y = z`,
+  filename: "unmatched-display-opener.tex"
+});
+assert(hasDisplayDelimiterIssue(unmatchedDisplayOpener, "\\["), "Test D5: real unmatched display opener should still fail");
+
+const unmatchedDisplayCloser = convertTextToLatex({
+  text: String.raw`x + y = z
+\]`,
+  filename: "unmatched-display-closer.tex"
+});
+assert(hasDisplayDelimiterIssue(unmatchedDisplayCloser, "\\]"), "Test D6: real unmatched display closer should still fail");
 
 const testE = convert(String.raw`\[
 \begin{bmatrix}
@@ -941,6 +995,27 @@ assertIncludes(hardMathSample.latex, "\\begin{cases}", "Test Z11: piecewise shou
 assertIncludes(hardMathSample.latex, "\\ce{2H2 + O2 -> 2H2O}", "Test Z11: chemistry should use mhchem ce");
 assertIncludes(hardMathSample.latex, "\\begin{tikzcd}", "Test Z11: diagram should use tikzcd");
 assertExcludes(hardMathSample.latex, "\\begin{itemize}", "Test Z11: minus math lines should not become itemize");
+
+const almostImpossibleRowSpacing = convertTextToLatex({
+  text: String.raw`\[
+\begin{aligned}
+\partial_t u &= \Delta u \\[8pt]
+\nabla u \cdot n &= 0 \\[4pt]
+\end{aligned}
+\]
+
+\[
+\begin{cases}
+u_0, & x \in \Omega, \\[4pt]
+0, & x \notin \Omega.
+\end{cases}
+\]`,
+  filename: "almost-impossible-row-spacing.tex"
+});
+assertIncludes(almostImpossibleRowSpacing.latex, "\\\\[8pt]", "Test Z11b: 8pt row spacing should be preserved");
+assertIncludes(almostImpossibleRowSpacing.latex, "\\\\[4pt]", "Test Z11b: 4pt row spacing should be preserved");
+assert(!hasDisplayDelimiterIssue(almostImpossibleRowSpacing, "\\["), "Test Z11b: row spacing should not create false unmatched display opener errors");
+assert(!hasDisplayDelimiterIssue(almostImpossibleRowSpacing, "\\]"), "Test Z11b: row spacing should not create false unmatched display closer errors");
 
 const fencedLatexCodeExample = convertTextToLatex({
   text: "Here is literal source:\n\n```latex\n\\documentclass{article}\n\\usepackage{amsmath}\n\\begin{document}\nHi\n\\end{document}\n```",

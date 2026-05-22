@@ -3024,7 +3024,7 @@ function validateEnvironmentBalanceAndNesting(latex: string, lineAt: LineLookup)
   const issues: ValidationIssue[] = [];
   const stack: EnvironmentStackEntry[] = [];
   const displayLines: number[] = [];
-  const tokenPattern = /\\begin\{([^}]+)\}|\\end\{([^}]+)\}|\\\[|\\\]/g;
+  const tokenPattern = /\\begin\{([^}]+)\}|\\end\{([^}]+)\}|(?<!\\)\\\[|(?<!\\)\\\]/g;
   let match: RegExpExecArray | null;
 
   while ((match = tokenPattern.exec(latex))) {
