@@ -1,0 +1,31 @@
+Title: Advanced LaTeX Conversion Sample
+Abstract:
+The converter should normalize Unicode math such as Ω, ∂, ∇, ε, α₁, and ℝⁿ into LaTeX.
+
+1. Unicode Math:
+Let Ω be a bounded domain and let x₁ ∈ ℝⁿ with ε² > 0.
+The gradient term is ∇u and the boundary term is ∂Ω.
+
+Equation System:
+a = b + c
+f(x) = x² + ε²
+
+Matrix Representation:
+A = [ [α₁, β₂], [γ₃, δ₄] ]
+
+D = | [a,b], [c,d] |
+
+Mathematical Model:
+Q(D) = 1 if C ≥ 0.90
+Q(D) = 0.5 if 0.70 ≤ C < 0.90
+Q(D) = 0 if C < 0.70
+
+Chemistry:
+2H2 + O2 -> 2H2O
+
+Commutative Diagram:
+A -> B
+↓    ↓
+C -> D
+
+- x² + y² = z²

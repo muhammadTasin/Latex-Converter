@@ -35,6 +35,9 @@ type PackageRequirements = {
   algpseudocode: boolean;
   amsthm: boolean;
   booktabs: boolean;
+  mathtools: boolean;
+  tikzcd: boolean;
+  mhchem: boolean;
 };
 
 type BuildDocumentOptions = {
@@ -55,6 +58,7 @@ type SectionHeading =
   | "Matrix Representation"
   | "System Architecture"
   | "Equation"
+  | "Equation System"
   | "Table"
   | "Algorithm"
   | "Optimization"
@@ -124,6 +128,7 @@ const protectedEnvironments = new Set([
   "proof",
   "algorithm",
   "algorithmic",
+  "tikzcd",
   "abstract"
 ]);
 
@@ -1369,6 +1374,15 @@ function parseDocument(text: string): ParsedDocument {
         }
       }
 
+      if (sectionLabel.heading === "Equation System" && !sectionLabel.detail) {
+        const equations = collectEquationSequenceBlock(lines, index + 1);
+        if (equations) {
+          blocks.push({ type: "displayMath", body: equations.body });
+          index = equations.nextIndex;
+          continue;
+        }
+      }
+
       index += 1;
       continue;
     }
@@ -1488,6 +1502,56 @@ function parseDocument(text: string): ParsedDocument {
 
   const mergedBlocks = mergeEquationBlocks(blocks);
   return { title, author, institution, date, blocks: insertKeywordsBlock(mergedBlocks, keywords) };
+}
+
+function mergeEquationBlocks(blocks: Block[]): Block[] {
+  const merged: Block[] = [];
+  let index = 0;
+
+  while (index < blocks.length) {
+    const block = blocks[index];
+    if (block.type !== "equation" || !isMergeableEquationBody(block.body)) {
+      merged.push(block);
+      index += 1;
+      continue;
+    }
+
+    const equations = [block.body];
+    let cursor = index + 1;
+
+    while (cursor < blocks.length && blocks[cursor].type === "equation" && isMergeableEquationBody((blocks[cursor] as Extract<Block, { type: "equation" }>).body)) {
+      equations.push((blocks[cursor] as Extract<Block, { type: "equation" }>).body);
+      cursor += 1;
+    }
+
+    if (equations.length < 2) {
+      merged.push(block);
+      index += 1;
+      continue;
+    }
+
+    merged.push({
+      type: "displayMath",
+      body: ["\\begin{aligned}", equations.map(formatAlignedEquationRow).join(" \\\\\n"), "\\end{aligned}"].join("\n")
+    });
+    index = cursor;
+  }
+
+  return merged;
+}
+
+function isMergeableEquationBody(body: string): boolean {
+  return (
+    !/\\begin\{(?:bmatrix|pmatrix|vmatrix|Vmatrix|cases|aligned|array|tikzcd)\}/.test(body) &&
+    !/\\ce\{/.test(body) &&
+    !/\n/.test(body) &&
+    /=/.test(body)
+  );
+}
+
+function formatAlignedEquationRow(body: string): string {
+  const equation = cleanEquation(body);
+  return equation.includes("&") ? equation : equation.replace(/\s*=\s*/, " &= ");
 }
 
 function collectEmbeddedLatexDocumentSnippet(lines: string[], startIndex: number): { lines: string[]; nextIndex: number } | null {
@@ -1858,7 +1922,7 @@ function buildDocument(options: BuildDocumentOptions): string {
 
 function parseSectionLabel(line: string): { heading: SectionHeading; detail: string } | null {
   const match =
-    /^(introduction|problem statement|mathematical model|loss function|matrix representation|system architecture|equation|table|algorithm|optimization|results|discussion|conclusion):\s*(.*)$/i.exec(
+    /^(introduction|problem statement|mathematical model|loss function|matrix representation|system architecture|equation system|equation|table|algorithm|optimization|results|discussion|conclusion):\s*(.*)$/i.exec(
       line
     );
   if (!match) {
@@ -1943,6 +2007,9 @@ function extractEquationBody(line: string, context?: string): string | null {
 
 function looksLikeProseWithMathSymbols(value: string): boolean {
   const trimmed = value.trim();
+  if (/^[A-Za-z]\s*=/.test(trimmed)) {
+    return false;
+  }
   return /^(for|if|while|when|where|given|let|assume|compute|solve|update|we|the|a|an|in|this|that|these|those)\b/i.test(trimmed) || /:\s*$/.test(trimmed);
 }
 
@@ -1997,6 +2064,35 @@ function collectFollowingEquation(lines: string[], startIndex: number): { body: 
   return equation ? { body: equation, nextIndex: collected.nextIndex } : null;
 }
 
+function collectEquationSequenceBlock(lines: string[], startIndex: number): { body: string; nextIndex: number } | null {
+  const equations: string[] = [];
+  let index = startIndex;
+
+  while (index < lines.length) {
+    const line = lines[index].trim();
+    if (!line || isDocumentBoundaryLine(line)) {
+      break;
+    }
+
+    const equation = extractEquationBody(line);
+    if (!equation || !isMergeableEquationBody(equation)) {
+      break;
+    }
+
+    equations.push(equation);
+    index += 1;
+  }
+
+  if (equations.length < 2) {
+    return null;
+  }
+
+  return {
+    body: ["\\begin{aligned}", equations.map(formatAlignedEquationRow).join(" \\\\\n"), "\\end{aligned}"].join("\n"),
+    nextIndex: index
+  };
+}
+
 function collectPiecewiseBlock(lines: string[], startIndex: number): { body: string; nextIndex: number } | null {
   const firstLine = lines[startIndex]?.trim() ?? "";
   
@@ -2028,7 +2124,7 @@ function collectPiecewiseBlock(lines: string[], startIndex: number): { body: str
     let inBlock = true;
     
     // First line might be `{ expression, if condition`
-    let firstBlockLine = lines[index].trim().replace(/^\{\s*/, "");
+    const firstBlockLine = lines[index].trim().replace(/^\{\s*/, "");
     if (firstBlockLine) {
       pieces.push(firstBlockLine);
     }
@@ -2072,6 +2168,102 @@ function parsePiecewiseLine(line: string): { left: string; value: string; condit
     value: match[2].trim(),
     condition: match[3].trim()
   };
+}
+
+function collectChemistryBlock(lines: string[], startIndex: number): { body: string; nextIndex: number } | null {
+  const firstLine = lines[startIndex]?.trim() ?? "";
+  const labelMatch = /^chem(?:istry|ical equation)?\s*:\s*(.*)$/i.exec(firstLine);
+
+  if (labelMatch) {
+    const inlineEquation = labelMatch[1].trim();
+    if (inlineEquation && looksLikeChemistryEquation(inlineEquation)) {
+      return { body: `\\ce{${normalizeChemistryExpression(inlineEquation)}}`, nextIndex: startIndex + 1 };
+    }
+
+    const collected = collectWhile(lines, startIndex + 1, (candidate) => {
+      const trimmed = candidate.trim();
+      return Boolean(trimmed) && !isDocumentBoundaryLine(trimmed) && looksLikeChemistryEquation(trimmed);
+    });
+
+    if (collected.values.length) {
+      return {
+        body: collected.values.map((line) => `\\ce{${normalizeChemistryExpression(line.trim())}}`).join(" \\\\\n"),
+        nextIndex: collected.nextIndex
+      };
+    }
+  }
+
+  if (looksLikeChemistryEquation(firstLine)) {
+    return { body: `\\ce{${normalizeChemistryExpression(firstLine)}}`, nextIndex: startIndex + 1 };
+  }
+
+  return null;
+}
+
+function looksLikeChemistryEquation(value: string): boolean {
+  const trimmed = value.trim();
+  if (!/(?:->|→|=)/.test(trimmed)) {
+    return false;
+  }
+
+  if (/\\(?:rightarrow|leftarrow|Rightarrow|Leftrightarrow|begin)\b/.test(trimmed)) {
+    return false;
+  }
+
+  const formulaTokens = trimmed.match(/\b\d*(?:[A-Z][a-z]?\d*)+\b/g) ?? [];
+  return formulaTokens.length >= 2;
+}
+
+function normalizeChemistryExpression(value: string): string {
+  return value.replace(/→/g, "->").replace(/\s+/g, " ").trim();
+}
+
+function collectCommutativeDiagramBlock(lines: string[], startIndex: number): { body: string; nextIndex: number } | null {
+  const firstLine = lines[startIndex]?.trim() ?? "";
+  const labelledDiagram = /^commutative\s+diagram\s*:?\s*$/i.test(firstLine);
+  const start = labelledDiagram ? startIndex + 1 : startIndex;
+  const collected = collectWhile(lines, start, (candidate) => {
+    const trimmed = candidate.trim();
+    return Boolean(trimmed) && !isDocumentBoundaryLine(trimmed) && /(?:->|←|→|↓|\\downarrow|\\to)/.test(trimmed);
+  });
+
+  if (!collected.values.length) {
+    return null;
+  }
+
+  const body = renderCommutativeDiagram(collected.values);
+  if (!body) {
+    return null;
+  }
+
+  return { body, nextIndex: collected.nextIndex };
+}
+
+function renderCommutativeDiagram(lines: string[]): string | null {
+  const meaningful = lines.map((line) => line.trim()).filter(Boolean);
+  const horizontalRows = meaningful.filter((line) => /(?:->|→|\\to)/.test(line));
+
+  if (horizontalRows.length < 2) {
+    return null;
+  }
+
+  const firstRow = parseDiagramHorizontalRow(horizontalRows[0]);
+  const secondRow = parseDiagramHorizontalRow(horizontalRows[1]);
+  if (!firstRow || !secondRow) {
+    return null;
+  }
+
+  return [
+    "\\begin{tikzcd}",
+    `${firstRow[0]} \\arrow[r] \\arrow[d] & ${firstRow[1]} \\arrow[d] \\\\`,
+    `${secondRow[0]} \\arrow[r] & ${secondRow[1]}`,
+    "\\end{tikzcd}"
+  ].join("\n");
+}
+
+function parseDiagramHorizontalRow(line: string): [string, string] | null {
+  const parts = line.split(/(?:->|→|\\to)/).map((part) => transformMathText(part.trim())).filter(Boolean);
+  return parts.length === 2 ? [parts[0], parts[1]] : null;
 }
 
 function collectOptimizationBlock(lines: string[], startIndex: number): { body: string; nextIndex: number } | null {
@@ -2279,7 +2471,7 @@ function convertMatrixExpression(value: string): string | null {
     return null;
   }
 
-  const formattedRows = rows.map((row) => `  ${row.join(" & ")}`).join(" \\\\\n");
+  const formattedRows = rows.map((row) => `  ${row.map(formatMathToken).join(" & ")}`).join(" \\\\\n");
   return `${prefix}\\begin{${env}}\n${formattedRows}\n\\end{${env}}`;
 }
 
@@ -2318,7 +2510,7 @@ function renderEquation(body: string): string {
     return "";
   }
 
-  if (equation.includes("\\begin{bmatrix}")) {
+  if (/\\begin\{(?:bmatrix|pmatrix|vmatrix|Vmatrix)\}/.test(equation)) {
     return ["\\[", equation, "\\]"].join("\n");
   }
 
@@ -2326,7 +2518,7 @@ function renderEquation(body: string): string {
 }
 
 function cleanEquation(body: string): string {
-  if (body.includes("\\begin{bmatrix}")) {
+  if (/\\begin\{(?:bmatrix|pmatrix|vmatrix|Vmatrix)\}/.test(body)) {
     return body.trim();
   }
 
@@ -2392,7 +2584,7 @@ function extractMathFromSentence(value: string, context?: string): string {
 }
 
 function transformMathText(value: string): string {
-  return value
+  return normalizeMathScripts(translateUnicodeMath(value)
     .replace(
       /\bx equals negative b plus or minus square root of b squared minus 4ac over 2a\b/gi,
       "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}"
@@ -2414,6 +2606,7 @@ function transformMathText(value: string): string {
     .replace(/\bh_\{?theta\}?\s*\(/g, "h_{\\theta}(")
     .replace(/\by_hat\b/g, "\\hat{y}")
     .replace(/\bE_(total|ocr|structure|latex)\b/g, "E_{\\text{$1}}")
+    .replace(/\bE_\{(total|ocr|structure|latex)\}/g, "E_{\\text{$1}}")
     .replace(/(?<!\\)\btheta\b/g, "\\theta")
     .replace(/(?<!\\)\bepsilon\b/g, "\\epsilon")
     .replace(/(?<!\\)\bdelta\b/g, "\\delta")
@@ -2424,7 +2617,7 @@ function transformMathText(value: string): string {
     .replace(/(?<!\\)\bint\b/gi, "\\int")
     .replace(/\b([A-Za-z])_([A-Za-z0-9]{2,})\b/g, "$1_{$2}")
     .replace(/\bJ\s*\(\\theta\)/g, "J(\\theta)")
-    .replace(/\b1\s*\/\s*n\b/g, "\\frac{1}{n}");
+    .replace(/\b1\s*\/\s*n\b/g, "\\frac{1}{n}"));
 }
 
 function formatEquationText(value: string): string {
@@ -2446,9 +2639,9 @@ function shouldUseSizedBrackets(value: string): boolean {
 }
 
 function formatMathToken(value: string): string {
-  return transformMathText(value)
+  return normalizeMathScripts(transformMathText(value)
     .replace(/^([A-Za-z])(\d+)$/, "$1_{$2}")
-    .replace(/^([A-Za-z]+)_([A-Za-z0-9]+)$/, "$1_{$2}");
+    .replace(/^([A-Za-z]+)_([A-Za-z0-9]+)$/, "$1_{$2}"));
 }
 
 function isAcademicMathExpression(value: string): boolean {
@@ -2944,7 +3137,8 @@ function findTabularRowsOutsideAllowedEnvironment(latex: string): number | null 
     "bmatrix",
     "Bmatrix",
     "vmatrix",
-    "Vmatrix"
+    "Vmatrix",
+    "tikzcd"
   ]);
   const lines = latex.split("\n");
 
@@ -3379,7 +3573,7 @@ function parseTableRows(lines: string[]): string[][] {
 
 const unicodeMathMap: Record<string, string> = {
   "Ω": "\\Omega", "ℝ": "\\mathbb{R}", "ℂ": "\\mathbb{C}", "ℚ": "\\mathbb{Q}", "ℤ": "\\mathbb{Z}", "ℕ": "\\mathbb{N}",
-  "∂": "\\partial", "∫": "\\int", "∀": "\\forall", "∃": "\\exists", "≥": "\\geq", "≤": "\\leq", "≠": "\\neq",
+  "∂": "\\partial", "∫": "\\int", "∑": "\\sum", "√": "\\sqrt", "∀": "\\forall", "∃": "\\exists", "≥": "\\geq", "≤": "\\leq", "≠": "\\neq",
   "≈": "\\approx", "≡": "\\equiv", "⇒": "\\Rightarrow", "⇔": "\\Leftrightarrow", "→": "\\rightarrow",
   "∞": "\\infty", "∇": "\\nabla", "×": "\\times", "÷": "\\div", "±": "\\pm", "∓": "\\mp",
   "∈": "\\in", "∉": "\\notin", "⊂": "\\subset", "⊆": "\\subseteq", "∪": "\\cup", "∩": "\\cap",
@@ -3391,9 +3585,11 @@ const unicodeMathMap: Record<string, string> = {
   "Σ": "\\Sigma", "Υ": "\\Upsilon", "Φ": "\\Phi", "Ψ": "\\Psi",
   "⁰": "^0", "¹": "^1", "²": "^2", "³": "^3", "⁴": "^4", "⁵": "^5", "⁶": "^6", "⁷": "^7", "⁸": "^8", "⁹": "^9",
   "⁺": "^+", "⁻": "^-", "ⁿ": "^n",
-  "₀": "_0", "₁": "_1", "₂": "_2", "₃": "_3", "₄": "_4", "₅": "_5", "₆": "_6", "⇇": "_7", "₈": "_8", "₉": "_9", // ⇇ is a typo for ₇ but let's fix it manually
+  "₀": "_0", "₁": "_1", "₂": "_2", "₃": "_3", "₄": "_4", "₅": "_5", "₆": "_6", "₈": "_8", "₉": "_9",
   "₇": "_7"
 };
+
+const unicodeMathRunRegex = new RegExp(`(?:[A-Za-z]+)?[${Object.keys(unicodeMathMap).map(escapeCharacterClass).join("")}]+`, "g");
 
 function preprocessUnicodeMath(value: string): string {
   const parts = value.split(/(\\\([^\n]*?\\\)|(?<!\\)\$[^$\n]+(?<!\\)\$|\\\[.*?\\\])/g);
@@ -3401,24 +3597,17 @@ function preprocessUnicodeMath(value: string): string {
     if (!part) return "";
     if (/^\\\(/.test(part) || /^(?<!\\)\$/.test(part) || /^\\\[/.test(part)) {
       let translated = part;
+      let changed = false;
       for (const [uni, tex] of Object.entries(unicodeMathMap)) {
+        if (translated.includes(uni)) {
+          changed = true;
+        }
         translated = translated.split(uni).join(tex);
       }
-      return translated;
+      return changed ? normalizeMathScripts(translated) : translated;
     }
-    
-    let translated = part;
-    for (const [uni, tex] of Object.entries(unicodeMathMap)) {
-      if (translated.includes(uni)) {
-        translated = translated.split(uni).join(`$${tex}$`);
-      }
-    }
-    // Merge adjacent math blocks
-    translated = translated.replace(/\$\s*\$/g, " ");
-    // Merge math blocks separated by basic operators
-    translated = translated.replace(/\$\s*([-+/*=<>]+)\s*\$/g, " $1 ");
-    
-    return translated;
+
+    return part.replace(unicodeMathRunRegex, (match) => `$${normalizeMathScripts(translateUnicodeMath(match))}$`);
   }).join("");
 }
 
@@ -3427,8 +3616,18 @@ function translateUnicodeMath(text: string): string {
   for (const [uni, tex] of Object.entries(unicodeMathMap)) {
     translated = translated.split(uni).join(` ${tex} `);
   }
-  translated = translated.replace(/ \^/g, "^").replace(/ _/g, "_");
-  return translated.replace(/\s+/g, " ").trim();
+  translated = translated.replace(/\s+([_^])/g, "$1").replace(/([_^])\s+/g, "$1");
+  return normalizeMathScripts(translated.replace(/\s+/g, " ").trim());
+}
+
+function normalizeMathScripts(value: string): string {
+  return value
+    .replace(/(\\mathbb\{[A-Z]\}|\\[A-Za-z]+|[A-Za-z0-9])\^([A-Za-z0-9+-]+)/g, "$1^{$2}")
+    .replace(/(\\mathbb\{[A-Z]\}|\\[A-Za-z]+|[A-Za-z0-9])_([A-Za-z0-9+-]+)/g, "$1_{$2}");
+}
+
+function escapeCharacterClass(value: string): string {
+  return value.replace(/[\\\]\-^]/g, "\\$&");
 }
 
 function isListLine(line: string): boolean {

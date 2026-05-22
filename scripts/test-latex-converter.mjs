@@ -835,6 +835,37 @@ assertExcludes(ultraHardResult.latex, "EXPECTED BEHAVIOR CHECK TABLE:", "Test Z8
 assertExcludes(ultraHardResult.latex, "| Text input |", "Test Z8: raw pipe row should not remain");
 assert(!ultraHardResult.validationIssues.some((issue) => /Raw Markdown code fence/.test(issue.message)), "Test Z8: canonical validation should not report raw fences");
 
+const advancedInput = fs.readFileSync(path.join(workspaceRoot, "fixtures", "advanced-latex-conversion-input.txt"), "utf8");
+const advancedResult = convertTextToLatex({
+  text: advancedInput,
+  filename: "advanced-latex-conversion-input.txt"
+});
+assert(!advancedResult.validationIssues.some((issue) => issue.severity === "error"), "Test Z9: advanced LaTeX sample should have no fatal validation errors");
+assertIncludes(advancedResult.latex, "\\usepackage{mathtools}", "Test Z9: mathtools should be required for advanced math structures");
+assertIncludes(advancedResult.latex, "\\usepackage{tikz-cd}", "Test Z9: tikz-cd should be required for commutative diagrams");
+assertIncludes(advancedResult.latex, "\\usepackage[version=4]{mhchem}", "Test Z9: mhchem should be required for chemistry");
+for (const rawSymbol of ["Ω", "∂", "∇", "ε", "α₁", "ℝⁿ", "²", "₁"]) {
+  assertExcludes(advancedResult.latex, rawSymbol, `Test Z9: raw Unicode math symbol ${rawSymbol} should be converted`);
+}
+assertIncludes(advancedResult.latex, "\\Omega", "Test Z9: Omega should be converted");
+assertIncludes(advancedResult.latex, "\\partial \\Omega", "Test Z9: partial boundary should be converted");
+assertIncludes(advancedResult.latex, "\\nabla", "Test Z9: nabla should be converted");
+assertIncludes(advancedResult.latex, "\\varepsilon^{2}", "Test Z9: epsilon squared should be converted");
+assertIncludes(advancedResult.latex, "\\alpha_{1}", "Test Z9: alpha subscript should be converted");
+assertIncludes(advancedResult.latex, "\\mathbb{R}^{n}", "Test Z9: R superscript n should be converted");
+assertIncludes(advancedResult.latex, "\\begin{aligned}", "Test Z9: equation system should use aligned");
+assertIncludes(advancedResult.latex, "a &= b + c", "Test Z9: first equation system row should be aligned");
+assertIncludes(advancedResult.latex, "f(x) &= x^{2} + \\varepsilon^{2}", "Test Z9: second equation system row should be aligned");
+assertIncludes(advancedResult.latex, "\\begin{bmatrix}", "Test Z9: matrix should use bmatrix");
+assertIncludes(advancedResult.latex, "\\alpha_{1} & \\beta_{2}", "Test Z9: matrix entries should convert Unicode scripts");
+assertIncludes(advancedResult.latex, "\\begin{vmatrix}", "Test Z9: determinant should use vmatrix");
+assertIncludes(advancedResult.latex, "\\begin{cases}", "Test Z9: piecewise function should use cases");
+assertIncludes(advancedResult.latex, "C \\geq 0.90", "Test Z9: piecewise condition should convert >= Unicode");
+assertIncludes(advancedResult.latex, "\\ce{2H2 + O2 -> 2H2O}", "Test Z9: chemistry should use mhchem ce");
+assertIncludes(advancedResult.latex, "\\begin{tikzcd}", "Test Z9: commutative diagram should use tikzcd");
+assertExcludes(advancedResult.latex, "\\begin{itemize}", "Test Z9: leading minus math line should not become itemize");
+assertIncludes(advancedResult.latex, "- x^{2} + y^{2} = z^{2}", "Test Z9: leading minus math line should remain math");
+
 console.log("LaTeX converter regression tests passed");
 
 function createMinimalPdf(text) {
