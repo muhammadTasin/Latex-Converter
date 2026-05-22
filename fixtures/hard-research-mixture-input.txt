@@ -1,0 +1,49 @@
+Title: Hard Research Mixture Gate
+Author: A. Rahman, J. Muller, S. Chen, and M. O'Connor
+Abstract:
+We test nonlinear PDE notation, code blocks, tables, Unicode, algorithms, and final-marker integrity.
+
+Keywords: nonlinear PDE; finite elements; Bayesian inverse problems; LaTeX preservation
+
+Expected Behavior
+Check Pass condition PDF upload App accepts the file or clearly says PDF input is unsupported. Text extraction Backslashes, braces, underscores, dollar signs, and vertical bars are not silently corrupted. Math/code blocks Raw LaTeX snippets remain recognizable after extraction. Validation Warnings are shown clearly; no false successful status if output is incomplete. Download Result can be downloaded as a .tex or .txt file. LaTeX source block: should extract as text
+
+1. Introduction
+Let \( \Omega \subset \mathbb{R}^d \), where \( d \in \{2,3\} \), be a bounded Lipschitz domain.
+Do not confuse \( |x_i| \) with table separators, and preserve \( \|x\|_2 \).
+
+\[
+\frac{\partial u}{\partial t}-\nabla\cdot(D(u,\theta)\nabla u)+r(u)=s(x,t).
+\]
+
+2. Algorithm
+Algorithm 1: Adaptive Newton-MCMC Solver
+Input: Initial parameter \( \theta_0 \), tolerance \( \varepsilon \), maximum iterations \( K_{\max} \)
+For k = 0, 1, 2, ..., Kmax:
+1. Solve forward PDE: \( \mathcal{R}(u_k;\theta_k)=0 \)
+2. Compute gradient: \( g_k = \nabla_\theta J(\theta_k) \)
+3. If \( \|g_k\|_2 < \varepsilon \), stop.
+
+3. Experimental Data Table
+| h | DOFs | L2 Error | Rate |
+|---|------|----------|------|
+| 1/8 | 81 | 1.26e-2 | -- |
+| 1/16 | 289 | 3.18e-3 | 1.99 |
+
+4. Code Block Trap
+The following should remain code, not converted into real sections or equations:
+
+```latex
+\section{This is inside a code block}
+\begin{equation}
+Let \( x \in \mathbb{R}^n \)
+\end{equation}
+\[
+\|x\|_2 = \sqrt{x_1^2+x_2^2+\cdots+x_n^2}.
+\]
+```
+
+5. References
+[1] D. Knuth, The TeXbook, Addison-Wesley, 1984.
+
+END_TEST_MARKER_OMEGA_999

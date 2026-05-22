@@ -1,0 +1,11 @@
+node_modules/
+.next/
+.env.local
+.env
+*.msi
+dist/
+build/
+out/
+tsconfig.tsbuildinfo
+.ocr-cache/
+*.log
