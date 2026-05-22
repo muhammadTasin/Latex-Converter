@@ -148,7 +148,7 @@ export function ConverterShell() {
   const [isConverting, setIsConverting] = useState(false);
   const [isOcrRunning, setIsOcrRunning] = useState(false);
   const [handwritingMode, setHandwritingMode] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copiedAction, setCopiedAction] = useState<"latex" | "log" | "validation" | null>(null);
   const [status, setStatus] = useState("Ready");
   const [stats, setStats] = useState<ConvertResponse["stats"]>();
   const [resetKey, setResetKey] = useState(0);
@@ -156,8 +156,8 @@ export function ConverterShell() {
   const enabledLanguages = useMemo(() => supportedLanguages.filter((item) => item.enabled), []);
   const directWarnings = useMemo(() => warnings.filter((warning) => !/^(ERROR|WARNING|INFO):/.test(warning)), [warnings]);
   const isLargeOutput = latex.length > outputPreviewCharacters;
-  const hasFatalIssues = validationIssues.some((issue) => issue.severity === "error") || metadata?.status === "failed";
-  const canDownloadTex = Boolean(latex) && !hasFatalIssues;
+  const hasLogContent = Boolean(metadata || warnings.length || validationIssues.length);
+  const canDownloadTex = Boolean(latex);
   const previewLatex = isLargeOutput
     ? `${latex.slice(0, outputPreviewCharacters)}\n\n% Preview truncated. Download the .tex file for the complete output.`
     : latex;
@@ -172,7 +172,7 @@ export function ConverterShell() {
     setWarnings([]);
     setValidationIssues([]);
     setMetadata(undefined);
-    setCopied(false);
+    setCopiedAction(null);
     setStatus("Ready");
     setResetKey((value) => value + 1);
   }
@@ -417,19 +417,39 @@ export function ConverterShell() {
     }
   }
 
-  async function copyLatex() {
-    if (!latex || isLargeOutput || hasFatalIssues) {
+  async function copyText(content: string, action: "latex" | "log" | "validation", emptyMessage: string) {
+    if (!content) {
+      setStatus(emptyMessage);
       return;
     }
 
-    await navigator.clipboard.writeText(latex);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1400);
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedAction(action);
+      setStatus("Copied");
+      window.setTimeout(() => setCopiedAction(null), 1400);
+    } catch {
+      const message = "Clipboard copy failed. Use the download button or select the text manually.";
+      setStatus("Copy failed");
+      setWarnings((currentWarnings) => (currentWarnings.includes(message) ? currentWarnings : [...currentWarnings, message]));
+    }
+  }
+
+  async function copyLatex() {
+    await copyText(latex, "latex", "No LaTeX output to copy");
+  }
+
+  async function copyLog() {
+    await copyText(getConversionLog(), "log", "No conversion log to copy");
+  }
+
+  async function copyValidation() {
+    await copyText(getValidationText(validationIssues), "validation", "No validation messages to copy");
   }
 
   function downloadTex() {
     if (!canDownloadTex) {
-      const message = "Download blocked because validation found fatal LaTeX errors.";
+      const message = "No LaTeX output is available to download.";
       setStatus("Download blocked");
       setWarnings((currentWarnings) => (currentWarnings.includes(message) ? currentWarnings : [...currentWarnings, message]));
       return;
@@ -438,27 +458,25 @@ export function ConverterShell() {
     downloadBlob(latex, outputFilename, "text/x-tex;charset=utf-8");
   }
 
+  function getConversionLog() {
+    return buildConversionLog({
+      status: metadata?.status ?? status,
+      filename: metadata?.filename ?? "pasted text",
+      inputSize: metadata?.fileSize !== undefined ? formatBytes(metadata.fileSize) : formatBytes(new Blob([sourceText]).size),
+      inputLength: metadata?.inputLength ?? sourceText.length,
+      outputLength: metadata?.outputLength ?? latex.length,
+      outputChecksum: metadata?.outputChecksum ?? "00000000",
+      inputType: metadata?.inputType ?? "plain-text",
+      outputType: metadata?.outputType ?? "latex-document",
+      outputFilename,
+      conversionMode: metadata?.conversionMode ?? conversionMode,
+      warnings,
+      validationIssues
+    });
+  }
+
   function downloadLog() {
-    const lines = [
-      "LaTeX conversion log",
-      "",
-      `Status: ${metadata?.status ?? status}`,
-      `Filename: ${metadata?.filename ?? "pasted text"}`,
-      `Input size: ${metadata?.fileSize !== undefined ? formatBytes(metadata.fileSize) : formatBytes(new Blob([sourceText]).size)}`,
-      `Input length: ${metadata?.inputLength ?? sourceText.length} characters`,
-      `Output length: ${metadata?.outputLength ?? latex.length} characters`,
-      `Output checksum: ${metadata?.outputChecksum ?? "00000000"}`,
-      `Input type: ${metadata?.inputType ?? "plain-text"}`,
-      `Output type: ${metadata?.outputType ?? "latex-document"}`,
-      `Output file: ${outputFilename}`,
-      "",
-      "Warnings:",
-      ...(warnings.length ? warnings.map((warning) => `- ${warning}`) : ["- None"]),
-      "",
-      "Validation:",
-      ...(validationIssues.length ? validationIssues.map((issue) => `- ${formatIssue(issue)}`) : ["- None"])
-    ];
-    downloadBlob(lines.join("\n"), outputFilename.replace(/\.tex$/i, "_log.txt"), "text/plain;charset=utf-8");
+    downloadBlob(getConversionLog(), outputFilename.replace(/\.tex$/i, "_log.txt"), "text/plain;charset=utf-8");
   }
 
   return (
@@ -636,10 +654,10 @@ export function ConverterShell() {
               <h2>LaTeX Preview</h2>
             </div>
             <div className="toolbar">
-              <button className="icon-button" onClick={copyLatex} disabled={!latex || isLargeOutput || hasFatalIssues} aria-label="Copy LaTeX">
-                {copied ? <Check size={18} /> : <Copy size={18} />}
+              <button className="icon-button" onClick={copyLatex} disabled={!latex} aria-label="Copy LaTeX output" title="Copy full LaTeX output">
+                {copiedAction === "latex" ? <Check size={18} /> : <Copy size={18} />}
               </button>
-              <button className="icon-button" onClick={downloadTex} disabled={!canDownloadTex} aria-label="Download .tex file">
+              <button className="icon-button" onClick={downloadTex} disabled={!canDownloadTex} aria-label="Download .tex file" title="Download full LaTeX output">
                 <Download size={18} />
               </button>
             </div>
@@ -655,17 +673,25 @@ export function ConverterShell() {
           <pre className="latex-output">{previewLatex}</pre>
 
           <div className="output-actions">
-            <button onClick={copyLatex} disabled={!latex || isLargeOutput || hasFatalIssues}>
-              <Copy size={16} />
-              Copy LaTeX
+            <button onClick={copyLatex} disabled={!latex}>
+              {copiedAction === "latex" ? <Check size={16} /> : <Copy size={16} />}
+              {copiedAction === "latex" ? "Copied LaTeX" : "Copy LaTeX"}
             </button>
             <button onClick={downloadTex} disabled={!canDownloadTex}>
               <Download size={16} />
               Download .tex
             </button>
-            <button onClick={downloadLog} disabled={!warnings.length && !validationIssues.length && !metadata}>
+            <button onClick={copyLog} disabled={!hasLogContent}>
+              {copiedAction === "log" ? <Check size={16} /> : <Copy size={16} />}
+              {copiedAction === "log" ? "Copied Log" : "Copy Log"}
+            </button>
+            <button onClick={copyValidation} disabled={!validationIssues.length}>
+              {copiedAction === "validation" ? <Check size={16} /> : <Copy size={16} />}
+              {copiedAction === "validation" ? "Copied Validation" : "Copy Validation"}
+            </button>
+            <button onClick={downloadLog} disabled={!hasLogContent}>
               <Download size={16} />
-              Download log
+              Download Log
             </button>
             <button disabled title="Add a LaTeX compiler service or tectonic backend to enable PDF export.">
               PDF export
@@ -731,6 +757,61 @@ function formatIssue(issue: ValidationIssue) {
   const line = issue.line ? `line ${issue.line}: ` : "";
   const fix = issue.suggestedFix ? ` Fix: ${issue.suggestedFix}` : "";
   return `${issue.severity.toUpperCase()} ${line}${issue.message}${fix}`;
+}
+
+function getValidationText(validationIssues: ValidationIssue[]) {
+  return validationIssues.map(formatIssue).join("\n");
+}
+
+function buildConversionLog({
+  status,
+  filename,
+  inputSize,
+  inputLength,
+  outputLength,
+  outputChecksum,
+  inputType,
+  outputType,
+  outputFilename,
+  conversionMode,
+  warnings,
+  validationIssues
+}: {
+  status: string;
+  filename: string;
+  inputSize: string;
+  inputLength: number;
+  outputLength: number;
+  outputChecksum: string;
+  inputType: string;
+  outputType: string;
+  outputFilename: string;
+  conversionMode: string;
+  warnings: string[];
+  validationIssues: ValidationIssue[];
+}) {
+  const lines = [
+    "LaTeX conversion log",
+    "",
+    `Status: ${status}`,
+    `Filename: ${filename}`,
+    `Input size: ${inputSize}`,
+    `Input length: ${inputLength} characters`,
+    `Output length: ${outputLength} characters`,
+    `Output checksum: ${outputChecksum}`,
+    `Input type: ${inputType}`,
+    `Output type: ${outputType}`,
+    `Output file: ${outputFilename}`,
+    `Conversion mode: ${conversionMode}`,
+    "",
+    "Warnings:",
+    ...(warnings.length ? warnings.map((warning) => `- ${warning}`) : ["- None"]),
+    "",
+    "Validation:",
+    ...(validationIssues.length ? validationIssues.map((issue) => `- ${formatIssue(issue)}`) : ["- None"])
+  ];
+
+  return lines.join("\n");
 }
 
 function getExtension(filename: string) {

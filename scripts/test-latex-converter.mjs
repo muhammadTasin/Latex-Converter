@@ -58,6 +58,28 @@ function assertExcludes(value, snippet, label) {
   assert(!value.includes(snippet), `${label}: expected output not to include ${snippet}`);
 }
 
+function findRawFenceOutsideVerbatim(value) {
+  const lines = value.split("\n");
+  let protectedDepth = 0;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (/\\begin\{(?:verbatim|lstlisting)\}/.test(line)) {
+      protectedDepth += 1;
+    }
+
+    if (protectedDepth === 0 && line.includes("```")) {
+      return { line: index + 1, text: line };
+    }
+
+    if (/\\end\{(?:verbatim|lstlisting)\}/.test(line) && protectedDepth > 0) {
+      protectedDepth -= 1;
+    }
+  }
+
+  return null;
+}
+
 const testA = convert(String.raw`\section{Finite Element Formulation}
 Let $\Omega \subset \mathbb{R}^2$.
 \[
@@ -790,6 +812,28 @@ assertIncludes(z7Res9.latex, "\\( a^2+b^2=c^2 \\)", "Test Z7.9: Should preserve 
 if (/^\|.*\|$/m.test(z7Res9.latex)) {
   throw new Error("Test Z7.9 Failed: Leftover raw pipe rows found outside the table");
 }
+
+const ultraHardInput = fs.readFileSync(path.join(workspaceRoot, "fixtures", "ultra-hard-output-consistency-input.txt"), "utf8");
+const ultraHardResult = convertTextToLatex({
+  text: ultraHardInput,
+  filename: "ultra-hard-output-consistency-input.txt"
+});
+assert(ultraHardResult.metadata.outputLength === ultraHardResult.latex.length, "Test Z8: metadata output length must match canonical LaTeX");
+assert(/^[0-9a-f]{8}$/.test(ultraHardResult.metadata.outputChecksum), "Test Z8: output checksum should be present");
+assertIncludes(ultraHardResult.latex, "ULTRA\\_FINAL\\_MARKER\\_SIGMA\\_777", "Test Z8: ultra final marker should be preserved in escaped LaTeX form");
+const ultraRawFence = findRawFenceOutsideVerbatim(ultraHardResult.latex);
+assert(!ultraRawFence, `Test Z8: raw fence outside verbatim/listing on line ${ultraRawFence?.line}: ${ultraRawFence?.text}`);
+assert(count(ultraHardResult.latex, /\\begin\{verbatim\}/g) >= 5, "Test Z8: all fenced code block types should become verbatim blocks");
+assertIncludes(ultraHardResult.latex, "\\begin{tabular}{ll}", "Test Z8: Expected Behavior table should use {ll}");
+for (const rowLabel of ["Text input", "Inline math", "Display math", "Code blocks", "Markdown tables", "Validation", "Unicode", "Security", "Download"]) {
+  assertIncludes(ultraHardResult.latex, `${rowLabel} &`, `Test Z8: Expected Behavior table should include ${rowLabel} row`);
+}
+assertIncludes(ultraHardResult.latex, "\\( a^2+b^2=c^2 \\)", "Test Z8: inline equation should stay inline in table");
+assertIncludes(ultraHardResult.latex, "\\( |x| \\)", "Test Z8: absolute-value inline math should stay intact");
+assertIncludes(ultraHardResult.latex, "\\( \\|x\\|_2 \\)", "Test Z8: norm inline math should stay intact");
+assertExcludes(ultraHardResult.latex, "EXPECTED BEHAVIOR CHECK TABLE:", "Test Z8: raw Expected Behavior prose should be converted");
+assertExcludes(ultraHardResult.latex, "| Text input |", "Test Z8: raw pipe row should not remain");
+assert(!ultraHardResult.validationIssues.some((issue) => /Raw Markdown code fence/.test(issue.message)), "Test Z8: canonical validation should not report raw fences");
 
 console.log("LaTeX converter regression tests passed");
 

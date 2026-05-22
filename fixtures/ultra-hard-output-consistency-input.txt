@@ -1,0 +1,56 @@
+Title: Ultra Hard Output Consistency Gate
+Author: Converter QA
+Abstract:
+This fixture verifies preview, copy, download, validation, and log consistency for very difficult converter input.
+
+EXPECTED BEHAVIOR CHECK TABLE:
+Check Pass condition Text input Converter accepts long research-style text without truncation. Inline math Real inline math such as \( a^2+b^2=c^2 \), \( |x| \), and \( \|x\|_2 \) remains real math. Display math Display math using \[...\], equation, align, aligned, bmatrix, cases, and split remains structurally valid. Code blocks Fenced code blocks remain literal and are not parsed as real LaTeX. Markdown tables Real Markdown tables convert to tabular, but tables inside code fences stay verbatim. Validation Missing ULTRA_FINAL_MARKER_SIGMA_777 must fail conversion. Unicode Unicode-heavy text is preserved or clearly warned about. Security HTML/script-like text is escaped or shown safely, not executed. Download Downloaded output must match preview output exactly.
+
+1. Introduction
+Inline math \( a^2+b^2=c^2 \), \( |x| \), and \( \|x\|_2 \) should stay inline math.
+
+2. Code Blocks
+The following code fences must stay literal.
+
+```latex
+\section{This is inside a code block}
+\begin{equation}
+x = y + z
+\end{equation}
+```
+
+```text
+| A | B |
+|---|---|
+| \section{fake} | \begin{equation}bad\end{equation} |
+```
+
+```python
+print("\\section{fake from python}")
+```
+
+```json
+{"latex": "\\section{fake from json}", "valid": false}
+```
+
+```yaml
+latex: "\\section{fake from yaml}"
+valid: false
+```
+
+3. Chemical and Physical Notation
+Water is H2O, carbon dioxide is CO2, and the relation \( E=mc^2 \) remains inline math.
+
+4. Unicode Stress Test
+Bengali বাংলা, Greek α β γ, emoji-like text, and math symbols ∑ ∫ √ should not crash conversion.
+
+5. Theorem
+If \( x \in \mathbb{R} \), then \( |x| \ge 0 \).
+
+Proof:
+The result follows from the definition of absolute value.
+
+6. References
+[1] D. Knuth, The TeXbook, Addison-Wesley, 1984.
+
+ULTRA_FINAL_MARKER_SIGMA_777

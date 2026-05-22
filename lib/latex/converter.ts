@@ -467,11 +467,14 @@ function normalizeStructuredLabels(text: string): string {
 function normalizeExtractedExpectedBehaviorTables(text: string): string {
   const boundaryPattern = [
     "Minimal\\s+pass\\s+criteria(?:\\s+for\\s+this\\s+PDF)?",
+    "\\d+[.)]\\s+[A-Za-z][^\\n]{2,80}",
+    "```",
     "Checklist",
     "LaTeX\\s+source\\s+block",
     "[-–—]{1,3}\\s*(?:page\\s*)?\\d+\\s*(?:of|/)\\s*\\d+\\s*[-–—]{1,3}",
     "Nested\\s+environments",
-    "Verbatim",
+    "Verbatim(?=\\s*(?:$|\\n))",
+    "Verbatim\\s+and\\s+Markdown-like\\s+Content",
     "Comments\\s+and\\s+Percent\\s+Signs",
     "Final\\s+Cross-Reference\\s+Check",
     "References",
@@ -511,8 +514,13 @@ function normalizeExtractedExpectedBehaviorTables(text: string): string {
 }
 
 function extractKnownExpectedBehaviorRows(body: string): Array<{ key: string; value: string }> {
+  const pipeRows = extractExpectedBehaviorPipeRows(body);
+  if (pipeRows.length) {
+    return pipeRows;
+  }
+
   const tableBody = body.replace(
-    /\s+(?:Minimal\s+pass\s+criteria(?:\s+for\s+this\s+PDF)?|Checklist|LaTeX\s+source\s+block|Nested\s+environments|Verbatim|Comments\s+and\s+Percent\s+Signs|Final\s+Cross-Reference\s+Check|References|Bibliography)\b[\s\S]*$/i,
+    /\s+(?:Minimal\s+pass\s+criteria(?:\s+for\s+this\s+PDF)?|Checklist|LaTeX\s+source\s+block|Nested\s+environments|Verbatim(?=\s*$)|Verbatim\s+and\s+Markdown-like\s+Content|Comments\s+and\s+Percent\s+Signs|Final\s+Cross-Reference\s+Check|References|Bibliography)\b[\s\S]*$/i,
     ""
   );
   const compact = tableBody.replace(/\s+/g, " ").trim();
@@ -531,7 +539,9 @@ function extractKnownExpectedBehaviorRows(body: string): Array<{ key: string; va
     while (index !== -1) {
       const before = index === 0 ? " " : compact[index - 1];
       const after = compact[index + key.length] ?? " ";
-      if (/\s/.test(before) && /\s/.test(after)) {
+      const isEmbeddedTablesWord = loweredKey === "tables" && /\b(?:markdown|latex)\s+$/i.test(compact.slice(0, index));
+      const isLowercaseTablesWord = loweredKey === "tables" && compact.slice(index, index + key.length) !== key;
+      if (/\s/.test(before) && /\s/.test(after) && !isEmbeddedTablesWord && !isLowercaseTablesWord) {
         positions.push({ key: normalizeExpectedBehaviorKey(key), index, length: key.length });
         searchFrom = index + key.length;
         break;
@@ -554,6 +564,62 @@ function extractKnownExpectedBehaviorRows(body: string): Array<{ key: string; va
   return rows;
 }
 
+function extractExpectedBehaviorPipeRows(body: string): Array<{ key: string; value: string }> {
+  return body
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => /^\|.+\|$/.test(line) && !isMarkdownSeparatorLine(line))
+    .map(splitMarkdownRowPreservingMath)
+    .filter((cells) => cells.length >= 2 && !/^check$/i.test(cells[0]))
+    .map((cells) => ({ key: normalizeExpectedBehaviorKey(cells[0]), value: cells.slice(1).join(" | ") }))
+    .filter((row) => row.key && row.value);
+}
+
+function splitMarkdownRowPreservingMath(line: string): string[] {
+  const content = line.trim().replace(/^\|/, "").replace(/\|$/, "");
+  const cells: string[] = [];
+  let current = "";
+  let inlineParenMath = false;
+  let dollarMath = false;
+
+  for (let index = 0; index < content.length; index += 1) {
+    const char = content[index];
+    const next = content[index + 1] ?? "";
+    const previous = content[index - 1] ?? "";
+
+    if (char === "\\" && next === "(") {
+      inlineParenMath = true;
+      current += char + next;
+      index += 1;
+      continue;
+    }
+
+    if (char === "\\" && next === ")") {
+      inlineParenMath = false;
+      current += char + next;
+      index += 1;
+      continue;
+    }
+
+    if (char === "$" && previous !== "\\") {
+      dollarMath = !dollarMath;
+      current += char;
+      continue;
+    }
+
+    if (char === "|" && !inlineParenMath && !dollarMath) {
+      cells.push(current.trim());
+      current = "";
+      continue;
+    }
+
+    current += char;
+  }
+
+  cells.push(current.trim());
+  return cells;
+}
+
 function normalizeExpectedBehaviorKey(key: string): string {
   return key === "Math code blocks" ? "Math/code blocks" : key;
 }
@@ -561,13 +627,28 @@ function normalizeExpectedBehaviorKey(key: string): string {
 function trimExtractedExpectedBehaviorValue(value: string): string {
   return value
     .replace(
-      /\s+(?:Minimal\s+pass\s+criteria(?:\s+for\s+this\s+PDF)?|Checklist|LaTeX\s+source\s+block|Nested\s+environments|Verbatim|Comments\s+and\s+Percent\s+Signs|Final\s+Cross-Reference\s+Check|References|Bibliography)\b[\s\S]*$/i,
+      /\s+(?:Minimal\s+pass\s+criteria(?:\s+for\s+this\s+PDF)?|Checklist|LaTeX\s+source\s+block|Nested\s+environments|Verbatim(?=\s*$)|Verbatim\s+and\s+Markdown-like\s+Content|Comments\s+and\s+Percent\s+Signs|Final\s+Cross-Reference\s+Check|References|Bibliography)\b[\s\S]*$/i,
       ""
     )
     .trim();
 }
 
-const EXPECTED_BEHAVIOR_KNOWN_KEYS = ["PDF upload", "Text extraction", "Inline math", "Code blocks", "Tables", "Math/code blocks", "Math code blocks", "Validation", "Download"] as const;
+const EXPECTED_BEHAVIOR_KNOWN_KEYS = [
+  "PDF upload",
+  "Text extraction",
+  "Text input",
+  "Inline math",
+  "Display math",
+  "Code blocks",
+  "Markdown tables",
+  "Tables",
+  "Math/code blocks",
+  "Math code blocks",
+  "Validation",
+  "Unicode",
+  "Security",
+  "Download"
+] as const;
 
 function matchKnownExpectedBehaviorKey(line: string): { key: string; value: string } | null {
   const trimmed = line.trim();
