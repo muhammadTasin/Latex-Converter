@@ -689,7 +689,10 @@ function inferPackageRequirements(text: string): PackageRequirements {
     algorithm: /\\begin\{algorithm\}/.test(text) || usesAlgorithmicxSyntax,
     algpseudocode: usesAlgorithmicxSyntax,
     amsthm: /\\begin\{(?:theorem|proof)\}/.test(text),
-    booktabs: /\\(?:toprule|midrule|bottomrule)\b/.test(text)
+    booktabs: /\\(?:toprule|midrule|bottomrule)\b/.test(text),
+    mathtools: /\\begin\{(?:vmatrix|bmatrix|cases|aligned)\}/.test(text) || /\\text\{/.test(text),
+    tikzcd: /\\begin\{tikzcd\}/.test(text),
+    mhchem: /\\ce\{/.test(text)
   };
 }
 
@@ -711,6 +714,18 @@ function ensureFullDocumentRequirements(text: string, requirements: PackageRequi
 
   if (requirements.amsthm && !hasUsePackage(normalizedText, "amsthm")) {
     insertions.push("\\usepackage{amsthm}");
+  }
+
+  if (requirements.mathtools && !hasUsePackage(normalizedText, "mathtools")) {
+    insertions.push("\\usepackage{mathtools}");
+  }
+
+  if (requirements.tikzcd && !hasUsePackage(normalizedText, "tikz-cd")) {
+    insertions.push("\\usepackage{tikz-cd}");
+  }
+
+  if (requirements.mhchem && !hasUsePackage(normalizedText, "mhchem")) {
+    insertions.push("\\usepackage[version=4]{mhchem}");
   }
 
   if (requirements.amsthm && /\\begin\{theorem\}/.test(normalizedText) && !/\\newtheorem\{theorem\}/.test(normalizedText)) {
@@ -1386,6 +1401,20 @@ function parseDocument(text: string): ParsedDocument {
       continue;
     }
 
+    const chemBlock = collectChemistryBlock(lines, index);
+    if (chemBlock) {
+      blocks.push({ type: "displayMath", body: chemBlock.body });
+      index = chemBlock.nextIndex;
+      continue;
+    }
+
+    const diagramBlock = collectCommutativeDiagramBlock(lines, index);
+    if (diagramBlock) {
+      blocks.push({ type: "displayMath", body: diagramBlock.body });
+      index = diagramBlock.nextIndex;
+      continue;
+    }
+
     const optimization = collectOptimizationBlock(lines, index);
     if (optimization) {
       blocks.push({ type: "align", body: optimization.body });
@@ -1449,8 +1478,6 @@ function parseDocument(text: string): ParsedDocument {
       blocks.push({ type: "paragraph", lines: paragraph.values });
       index = paragraph.nextIndex;
     } else {
-      // Fallback: If no parser handled this line but it triggered isStructuralLine,
-      // it's a false positive structure (e.g. a loose Markdown table row). Consume it as a paragraph to prevent infinite loops.
       const fallbackLine = lines[index].trim();
       if (fallbackLine) {
         blocks.push({ type: "paragraph", lines: [fallbackLine] });
@@ -1459,7 +1486,8 @@ function parseDocument(text: string): ParsedDocument {
     }
   }
 
-  return { title, author, institution, date, blocks: insertKeywordsBlock(blocks, keywords) };
+  const mergedBlocks = mergeEquationBlocks(blocks);
+  return { title, author, institution, date, blocks: insertKeywordsBlock(mergedBlocks, keywords) };
 }
 
 function collectEmbeddedLatexDocumentSnippet(lines: string[], startIndex: number): { lines: string[]; nextIndex: number } | null {
@@ -1668,7 +1696,8 @@ function renderParagraph(lines: string[]): string {
 }
 
 function renderTextPreservingInlineMath(value: string): string {
-  return convertInlineSyntax(escapeTextPreservingInlineMath(value));
+  const preprocessed = preprocessUnicodeMath(value);
+  return convertInlineSyntax(escapeTextPreservingInlineMath(preprocessed));
 }
 
 function escapeTextPreservingInlineMath(value: string): string {
@@ -1785,25 +1814,33 @@ function buildDocument(options: BuildDocumentOptions): string {
   const institution = options.institution?.trim() ? `\\\\${escapeLatex(options.institution.trim())}` : "";
   const date = options.date?.trim() ? escapeLatex(options.date.trim()) : "\\today";
   const packages = options.packages ?? {};
-  const optionalPackages = [
-    packages.algorithm ? "\\usepackage{algorithm}" : null,
-    packages.algpseudocode ? "\\usepackage{algpseudocode}" : null
-  ].filter(Boolean);
+  
+  const macros = [];
+  if (options.body.includes("\\mathbb{R}")) macros.push("\\newcommand{\\R}{\\mathbb{R}}");
+  if (options.body.includes("\\mathbb{C}")) macros.push("\\newcommand{\\C}{\\mathbb{C}}");
+  if (options.body.includes("\\mathbb{Q}")) macros.push("\\newcommand{\\Q}{\\mathbb{Q}}");
+  if (options.body.includes("\\mathrm{d}")) macros.push("\\newcommand{\\dd}{\\,\\mathrm{d}}");
+  if (options.body.includes("\\norm{")) macros.push("\\newcommand{\\norm}[1]{\\left\\lVert #1 \\right\\rVert}");
+  if (options.body.includes("\\abs{")) macros.push("\\newcommand{\\abs}[1]{\\left\\lvert #1 \\right\\rvert}");
+  if (options.body.includes("\\Ric")) macros.push("\\DeclareMathOperator{\\Ric}{Ric}");
 
   return [
     "\\documentclass[12pt]{article}",
     "\\usepackage[utf8]{inputenc}",
     "\\usepackage[T1]{fontenc}",
     "\\usepackage{amsmath, amssymb}",
-    "\\usepackage{amsthm}",
-    "\\usepackage{booktabs}",
-    ...optionalPackages,
+    packages.mathtools ? "\\usepackage{mathtools}" : "",
+    packages.amsthm ? "\\usepackage{amsthm}" : "",
+    packages.booktabs ? "\\usepackage{booktabs}" : "",
+    packages.algorithm ? "\\usepackage{algorithm}" : "",
+    packages.algpseudocode ? "\\usepackage{algpseudocode}" : "",
+    packages.tikzcd ? "\\usepackage{tikz-cd}" : "",
+    packages.mhchem ? "\\usepackage[version=4]{mhchem}" : "",
     "\\usepackage{geometry}",
     "\\usepackage{hyperref}",
     "\\geometry{margin=1in}",
-    "\\newtheorem{theorem}{Theorem}",
-    "\\newcommand{\\norm}[1]{\\left\\lVert #1 \\right\\rVert}",
-    "\\newcommand{\\abs}[1]{\\left\\lvert #1 \\right\\rvert}",
+    packages.amsthm && !options.body.includes("\\newtheorem{theorem}") ? "\\newtheorem{theorem}{Theorem}" : "",
+    ...macros,
     "",
     `% Language profile: ${options.languageCode}`,
     `\\title{${title}}`,
@@ -1961,37 +1998,67 @@ function collectFollowingEquation(lines: string[], startIndex: number): { body: 
 }
 
 function collectPiecewiseBlock(lines: string[], startIndex: number): { body: string; nextIndex: number } | null {
-  const first = parsePiecewiseLine(lines[startIndex]?.trim() ?? "");
-  if (!first) {
-    return null;
-  }
-
-  const pieces = [first];
-  let index = startIndex + 1;
-
-  while (index < lines.length) {
-    const parsed = parsePiecewiseLine(lines[index].trim());
-    if (!parsed || parsed.left !== first.left) {
-      break;
+  const firstLine = lines[startIndex]?.trim() ?? "";
+  
+  // Handle single-line traditional parsing
+  const first = parsePiecewiseLine(firstLine);
+  if (first) {
+    const pieces = [first];
+    let index = startIndex + 1;
+    while (index < lines.length) {
+      const parsed = parsePiecewiseLine(lines[index].trim());
+      if (!parsed || parsed.left !== first.left) break;
+      pieces.push(parsed);
+      index += 1;
     }
-
-    pieces.push(parsed);
-    index += 1;
+    if (pieces.length >= 2) {
+      const rows = pieces.map((p, i) => `${transformMathText(p.value)}, & ${transformMathText(p.condition)}${i === pieces.length - 1 ? "." : ","}`);
+      return { body: [`${transformMathText(first.left)} =`, "\\begin{cases}", rows.join(" \\\\\n"), "\\end{cases}"].join("\n"), nextIndex: index };
+    }
   }
 
-  if (pieces.length < 2) {
-    return null;
+  // Handle multi-line block parsing like:
+  // F(x,y) =
+  // { expression, if condition,
+  //   expression, otherwise. }
+  const blockMatch = /^([A-Za-z0-9_()]+)\s*=$/.exec(firstLine);
+  if (blockMatch && lines[startIndex + 1]?.trim().startsWith("{")) {
+    const pieces: string[] = [];
+    let index = startIndex + 1;
+    let inBlock = true;
+    
+    // First line might be `{ expression, if condition`
+    let firstBlockLine = lines[index].trim().replace(/^\{\s*/, "");
+    if (firstBlockLine) {
+      pieces.push(firstBlockLine);
+    }
+    index++;
+    
+    while (index < lines.length && inBlock) {
+      let line = lines[index].trim();
+      if (!line) { index++; continue; }
+      if (line.endsWith("}")) {
+        line = line.slice(0, -1).trim();
+        inBlock = false;
+      }
+      if (line) pieces.push(line);
+      index++;
+    }
+    
+    if (pieces.length >= 2) {
+      const rows = pieces.map(p => {
+        const match = /^(.+?),\s+(if\s+|otherwise\.?|)(.+)$/i.exec(p);
+        if (match) {
+          const cond = match[2].toLowerCase().includes("otherwise") ? "\\text{otherwise}" : transformMathText(match[3].replace(/[.;]$/, ""));
+          return `${transformMathText(match[1].trim())}, & ${cond}`;
+        }
+        return `${transformMathText(p)}, &`;
+      });
+      return { body: [`${transformMathText(blockMatch[1])} =`, "\\begin{cases}", rows.join(" \\\\\n"), "\\end{cases}"].join("\n"), nextIndex: index };
+    }
   }
 
-  const rows = pieces.map((piece, pieceIndex) => {
-    const ending = pieceIndex === pieces.length - 1 ? "." : ",";
-    return `${transformMathText(piece.value)}, & ${transformMathText(piece.condition)}${ending}`;
-  });
-
-  return {
-    body: [`${transformMathText(first.left)} =`, "\\begin{cases}", rows.join(" \\\\\n"), "\\end{cases}"].join("\n"),
-    nextIndex: index
-  };
+  return null;
 }
 
 function parsePiecewiseLine(line: string): { left: string; value: string; condition: string } | null {
@@ -2188,18 +2255,32 @@ function collectBracketedMatrixExpression(lines: string[], startIndex: number): 
 }
 
 function convertMatrixExpression(value: string): string | null {
-  const match = /^([A-Za-z][A-Za-z0-9_]*)\s*=\s*(.+)$/.exec(value.trim());
-  if (!match) {
+  let matrixText = value.trim();
+  let prefix = "";
+  
+  const assignmentMatch = /^([A-Za-z][A-Za-z0-9_]*)\s*=\s*(.+)$/.exec(matrixText);
+  if (assignmentMatch) {
+    prefix = `${assignmentMatch[1]} = \n`;
+    matrixText = assignmentMatch[2].trim();
+  }
+  
+  let env = "bmatrix";
+  if (matrixText.startsWith("|") && matrixText.endsWith("|")) {
+    env = "vmatrix";
+    matrixText = matrixText.slice(1, -1).trim();
+  } else if (matrixText.startsWith("[") && matrixText.endsWith("]")) {
+    matrixText = matrixText.slice(1, -1).trim();
+  } else if (!assignmentMatch) {
     return null;
   }
 
-  const matrixText = match[2].trim();
   const rows = extractMatrixRows(matrixText);
   if (rows.length < 2) {
     return null;
   }
 
-  return renderMatrix(match[1], rows);
+  const formattedRows = rows.map((row) => `  ${row.join(" & ")}`).join(" \\\\\n");
+  return `${prefix}\\begin{${env}}\n${formattedRows}\n\\end{${env}}`;
 }
 
 function extractMatrixRows(matrixText: string): string[][] {
@@ -2260,6 +2341,7 @@ function cleanEquation(body: string): string {
 function stripWordHyphens(value: string): string {
   return value.replace(/\b([A-Za-z]{2,})-([A-Za-z]{2,})\b/g, "$1 $2");
 }
+
 
 function isMathExpression(value: string): boolean {
   if (isPageMarkerLine(value) || isChecklistLine(value)) {
@@ -3295,8 +3377,66 @@ function parseTableRows(lines: string[]): string[][] {
   });
 }
 
+const unicodeMathMap: Record<string, string> = {
+  "Ω": "\\Omega", "ℝ": "\\mathbb{R}", "ℂ": "\\mathbb{C}", "ℚ": "\\mathbb{Q}", "ℤ": "\\mathbb{Z}", "ℕ": "\\mathbb{N}",
+  "∂": "\\partial", "∫": "\\int", "∀": "\\forall", "∃": "\\exists", "≥": "\\geq", "≤": "\\leq", "≠": "\\neq",
+  "≈": "\\approx", "≡": "\\equiv", "⇒": "\\Rightarrow", "⇔": "\\Leftrightarrow", "→": "\\rightarrow",
+  "∞": "\\infty", "∇": "\\nabla", "×": "\\times", "÷": "\\div", "±": "\\pm", "∓": "\\mp",
+  "∈": "\\in", "∉": "\\notin", "⊂": "\\subset", "⊆": "\\subseteq", "∪": "\\cup", "∩": "\\cap",
+  "α": "\\alpha", "β": "\\beta", "γ": "\\gamma", "δ": "\\delta", "ε": "\\varepsilon", "ζ": "\\zeta",
+  "η": "\\eta", "θ": "\\theta", "ι": "\\iota", "κ": "\\kappa", "λ": "\\lambda", "μ": "\\mu",
+  "ν": "\\nu", "ξ": "\\xi", "π": "\\pi", "ρ": "\\rho", "σ": "\\sigma", "τ": "\\tau",
+  "υ": "\\upsilon", "φ": "\\varphi", "χ": "\\chi", "ψ": "\\psi", "ω": "\\omega",
+  "Γ": "\\Gamma", "Δ": "\\Delta", "Θ": "\\Theta", "Λ": "\\Lambda", "Ξ": "\\Xi", "Π": "\\Pi",
+  "Σ": "\\Sigma", "Υ": "\\Upsilon", "Φ": "\\Phi", "Ψ": "\\Psi",
+  "⁰": "^0", "¹": "^1", "²": "^2", "³": "^3", "⁴": "^4", "⁵": "^5", "⁶": "^6", "⁷": "^7", "⁸": "^8", "⁹": "^9",
+  "⁺": "^+", "⁻": "^-", "ⁿ": "^n",
+  "₀": "_0", "₁": "_1", "₂": "_2", "₃": "_3", "₄": "_4", "₅": "_5", "₆": "_6", "⇇": "_7", "₈": "_8", "₉": "_9", // ⇇ is a typo for ₇ but let's fix it manually
+  "₇": "_7"
+};
+
+function preprocessUnicodeMath(value: string): string {
+  const parts = value.split(/(\\\([^\n]*?\\\)|(?<!\\)\$[^$\n]+(?<!\\)\$|\\\[.*?\\\])/g);
+  return parts.map(part => {
+    if (!part) return "";
+    if (/^\\\(/.test(part) || /^(?<!\\)\$/.test(part) || /^\\\[/.test(part)) {
+      let translated = part;
+      for (const [uni, tex] of Object.entries(unicodeMathMap)) {
+        translated = translated.split(uni).join(tex);
+      }
+      return translated;
+    }
+    
+    let translated = part;
+    for (const [uni, tex] of Object.entries(unicodeMathMap)) {
+      if (translated.includes(uni)) {
+        translated = translated.split(uni).join(`$${tex}$`);
+      }
+    }
+    // Merge adjacent math blocks
+    translated = translated.replace(/\$\s*\$/g, " ");
+    // Merge math blocks separated by basic operators
+    translated = translated.replace(/\$\s*([-+/*=<>]+)\s*\$/g, " $1 ");
+    
+    return translated;
+  }).join("");
+}
+
+function translateUnicodeMath(text: string): string {
+  let translated = text;
+  for (const [uni, tex] of Object.entries(unicodeMathMap)) {
+    translated = translated.split(uni).join(` ${tex} `);
+  }
+  translated = translated.replace(/ \^/g, "^").replace(/ _/g, "_");
+  return translated.replace(/\s+/g, " ").trim();
+}
+
 function isListLine(line: string): boolean {
   const trimmed = line.trim();
+  // Never treat a leading minus as a list if the rest is math
+  if (trimmed.startsWith("- ") && (isMathExpression(trimmed.slice(2)) || /[\\]/.test(trimmed))) {
+    return false;
+  }
   return !parseNumberedSectionHeading(trimmed) && !isNumberedHeadingLine(trimmed) && (/^([-*+]\s+|\d+[.)]\s+)/.test(trimmed) || isChecklistLine(trimmed));
 }
 
