@@ -17,12 +17,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Upload an image file before running OCR." }, { status: 400 });
     }
 
-    if (!file.type.startsWith("image/")) {
-      return NextResponse.json({ error: "The uploaded file must be an image." }, { status: 400 });
+    const allowedMimeTypes = ["image/png", "image/jpeg", "image/webp"];
+    if (!allowedMimeTypes.includes(file.type)) {
+      return NextResponse.json({ error: "The uploaded file must be a PNG, JPEG, or WEBP image." }, { status: 415 });
     }
 
     if (file.size > maxImageBytes) {
-      return NextResponse.json({ error: "Image is larger than the 8 MB starter limit." }, { status: 413 });
+      return NextResponse.json({ error: `Image is larger than the ${maxImageBytes / (1024 * 1024)} MB starter limit.` }, { status: 413 });
     }
 
     const provider = getOcrProvider();
@@ -35,9 +36,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result);
   } catch (error) {
+    console.error("OCR API Error:", error);
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "OCR failed.",
+        error: "OCR failed due to an internal server error.",
         provider: process.env.OCR_PROVIDER ?? "tesseract",
         warnings: ["The image could not be processed. Try a sharper image or a different OCR provider."]
       },

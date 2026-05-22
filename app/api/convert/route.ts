@@ -27,6 +27,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result, { status });
   } catch (error) {
+    console.error("Conversion API Error:", error);
     return NextResponse.json(
       {
         latex: "",
@@ -48,8 +49,7 @@ export async function POST(request: Request) {
           inputLength: 0,
           outputLength: 0
         },
-        stats: { wordCount: 0, equationCount: 0, tableCount: 0, citationCount: 0 },
-        error: error instanceof Error ? error.message : "Unknown conversion error"
+        stats: { wordCount: 0, equationCount: 0, tableCount: 0, citationCount: 0 }
       },
       { status: 400 }
     );

@@ -18,7 +18,7 @@ export async function POST(request: Request) {
 
     if (file.size > maxConvertibleBytes) {
       return pdfError(
-        `PDF is ${(file.size / (1024 * 1024)).toFixed(1)} MB, which exceeds the 2 MB limit.`,
+        `PDF is ${(file.size / (1024 * 1024)).toFixed(1)} MB, which exceeds the ${maxConvertibleBytes / (1024 * 1024)} MB limit.`,
         "Upload a smaller PDF or split the document before extraction.",
         413
       );
@@ -53,10 +53,11 @@ export async function POST(request: Request) {
       }
     });
   } catch (error) {
+    console.error("PDF Extraction API Error:", error);
     return pdfError(
       "PDF text could not be extracted. Please upload a .tex file for exact LaTeX preservation.",
-      error instanceof Error ? error.message : "Unknown PDF extraction error",
-      422
+      "Internal PDF extraction error. Please check server logs.",
+      500
     );
   }
 }
