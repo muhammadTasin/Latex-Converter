@@ -3,6 +3,14 @@
 import { useMemo, useState } from "react";
 import { AlertCircle, Check, Copy, Download, FileText, FileUp, ImagePlus, Info, Loader2, ScanText, Sparkles, Trash2 } from "lucide-react";
 import { supportedLanguages } from "@/lib/languages";
+import {
+  getDetectedDisplayValue,
+  getOutputHeading,
+  getSourceTip,
+  isCompileReadyDisabled,
+  isStandaloneDependency,
+  shouldShowDocumentMetadataFields
+} from "@/lib/latex/display";
 
 type ValidationIssue = {
   severity: "error" | "warning" | "info";
@@ -181,6 +189,8 @@ export function ConverterShell() {
   const isLargeOutput = latex.length > outputPreviewCharacters;
   const hasLogContent = Boolean(metadata || warnings.length || validationIssues.length);
   const canDownloadTex = Boolean(latex);
+  const standaloneDependency = isStandaloneDependency(metadata);
+  const outputHeading = getOutputHeading(metadata);
   const previewLatex = isLargeOutput
     ? `${latex.slice(0, outputPreviewCharacters)}\n\n% Preview truncated. Download the .tex file for the complete output.`
     : latex;
@@ -228,6 +238,9 @@ export function ConverterShell() {
       setWarnings([...preservedWarnings, ...(data.warnings ?? [])]);
       setValidationIssues(data.validationIssues ?? []);
       setMetadata(data.metadata);
+      if (isStandaloneDependency(data.metadata) && conversionMode === "compile-ready") {
+        setConversionMode("recover-raw");
+      }
 
       if (!response.ok || data.metadata?.status === "failed") {
         setStatus(response.status === 413 ? "File too large" : "Conversion failed");
@@ -633,16 +646,18 @@ export function ConverterShell() {
             </div>
           </div>
 
-          <div className="field-grid">
-            <label>
-              Title
-              <input value={title} onChange={(event) => setTitle(event.target.value)} />
-            </label>
-            <label>
-              Author
-              <input value={author} onChange={(event) => setAuthor(event.target.value)} />
-            </label>
-          </div>
+          {shouldShowDocumentMetadataFields(metadata) ? (
+            <div className="field-grid">
+              <label>
+                Title
+                <input value={title} onChange={(event) => setTitle(event.target.value)} />
+              </label>
+              <label>
+                Author
+                <input value={author} onChange={(event) => setAuthor(event.target.value)} />
+              </label>
+            </div>
+          ) : null}
 
           <label>
             Language
@@ -683,7 +698,12 @@ export function ConverterShell() {
                 className={conversionMode === "compile-ready" ? "mode-option active" : "mode-option"}
                 onClick={() => setConversionMode("compile-ready")}
                 aria-pressed={conversionMode === "compile-ready"}
-                title="Preserve full documents and wrap fragments for compile validation when a compiler is available"
+                disabled={isCompileReadyDisabled(metadata)}
+                title={
+                  standaloneDependency
+                    ? "Dependency files need a main .tex document for compile-ready validation"
+                    : "Preserve full documents and wrap fragments for compile validation when a compiler is available"
+                }
               >
                 <Sparkles size={14} />
                 Compile-ready
@@ -706,7 +726,13 @@ export function ConverterShell() {
           <div className="notice neutral" style={{ marginTop: "4px", marginBottom: "4px" }}>
             <Info size={18} style={{ flexShrink: 0 }} />
             <div>
-              <strong>Accuracy Tip:</strong> For getting 100% accurate text, you should upload small chunks of your project (ideally under 2MB).
+              {standaloneDependency ? (
+                getSourceTip(metadata)
+              ) : (
+                <>
+                  <strong>Accuracy Tip:</strong> {getSourceTip(metadata)}
+                </>
+              )}
             </div>
           </div>
 
@@ -771,7 +797,7 @@ export function ConverterShell() {
             </div>
           ) : null}
 
-          {metadata?.fileRole === "dependency-library" ? (
+          {standaloneDependency ? (
             <div className="notice neutral">
               <Info size={18} />
               Dependency file detected. Use with a main .tex document.
@@ -805,7 +831,7 @@ export function ConverterShell() {
           <div className="panel-header">
             <div>
               <p className="panel-kicker">Output</p>
-              <h2>LaTeX Preview</h2>
+              <h2>{outputHeading}</h2>
             </div>
             <div className="toolbar">
               <button className="icon-button" onClick={copyLatex} disabled={!latex} aria-label="Copy LaTeX output" title="Copy full LaTeX output">
@@ -865,7 +891,7 @@ function MetadataPanel({ metadata, sourceFile, sourceText }: { metadata?: Conver
     <div className="metadata-grid">
       <MetaItem label="Filename" value={filename} />
       <MetaItem label="Size" value={formatBytes(fileSize)} />
-      <MetaItem label="Detected" value={metadata?.inputType ?? "pending"} />
+      <MetaItem label="Detected" value={getDetectedDisplayValue(metadata)} />
       <MetaItem label="Output" value={metadata?.outputFilename ?? "converted_output.tex"} />
       <MetaItem label="Input chars" value={String(metadata?.inputLength ?? sourceText.length)} />
       <MetaItem label="Output chars" value={String(metadata?.outputLength ?? 0)} />
