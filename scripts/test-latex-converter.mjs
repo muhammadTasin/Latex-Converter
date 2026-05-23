@@ -329,7 +329,7 @@ Broken custom documentation content.
 \end{document}`,
   filename: "mismatched-unknown-environment.tex"
 });
-assert(mismatchedUnknownEnvironment.metadata.status === "failed", "Test H4: mismatched unknown environments should fail conversion");
+assert(mismatchedUnknownEnvironment.metadata.status === "validation-warning", "Test H4: mismatched unknown environments should produce validation-warning status");
 assert(mismatchedUnknownEnvironment.validationIssues.some((issue) => issue.severity === "error" && /Unbalanced environment/.test(issue.message)), "Test H4: mismatched unknown environments should produce an unbalanced-environment error");
 
 const unclosedUnknownEnvironment = convertTextToLatex({
@@ -340,7 +340,7 @@ Unclosed custom documentation content.
 \end{document}`,
   filename: "unclosed-unknown-environment.tex"
 });
-assert(unclosedUnknownEnvironment.metadata.status === "failed", "Test H5: unclosed unknown environments should fail conversion");
+assert(unclosedUnknownEnvironment.metadata.status === "validation-warning", "Test H5: unclosed unknown environments should produce validation-warning status");
 assert(unclosedUnknownEnvironment.validationIssues.some((issue) => issue.severity === "error" && /(Unbalanced environment|has no matching)/.test(issue.message)), "Test H5: unclosed unknown environments should produce a structural environment error");
 
 const mixedMarkdown = convertTextToLatex({
@@ -1138,9 +1138,14 @@ const quantikzManual = convertTextToLatex({
 assert(quantikzManual.metadata.fileRole === "full-document", "Test AA2: quantikz manual should be classified as full-document");
 assert(quantikzManual.metadata.inputType === "latex-document", "Test AA2: quantikz manual should remain a LaTeX document");
 assertIncludes(quantikzManual.latex, "\\documentclass[aps,prx,reprint]{revtex4-2}", "Test AA2: revtex documentclass should be preserved");
+assertIncludes(quantikzManual.latex, "%\\documentclass{article}", "Test AA2: commented documentclass should be preserved as source");
 assertIncludes(quantikzManual.latex, "\\usetikzlibrary{quantikz2}", "Test AA2: quantikz tikz library import should be preserved");
 assertIncludes(quantikzManual.latex, "\\newtcblisting{Code}", "Test AA2: custom Code/tcolorbox environment should be preserved");
+assertIncludes(quantikzManual.latex, "\\NewTCBListing{FullCode}", "Test AA2: custom FullCode/tcolorbox environment should be preserved");
 assertIncludes(quantikzManual.latex, "\\begin{quantikz}", "Test AA2: quantikz examples should be preserved");
+assert(quantikzManual.metadata.status === "preserved", "Test AA2: skipped compile with clean static validation should remain preserved");
+assert(!quantikzManual.validationIssues.some((issue) => /Duplicate \\documentclass/.test(issue.message)), "Test AA2: commented documentclass should not be counted as duplicate");
+assert(!quantikzManual.validationIssues.some((issue) => /Environment \"(?:Code|FullCode|quantikz)\"/.test(issue.message)), "Test AA2: Code, FullCode, and quantikz should be treated as known");
 
 for (const [filename, source, role] of [
   ["package-test.sty", "\\ProvidesPackage{package-test}\\NewDocumentCommand{\\foo}{}{bar}", "dependency-library"],

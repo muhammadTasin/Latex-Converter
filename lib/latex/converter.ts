@@ -155,6 +155,14 @@ const protectedEnvironments = new Set([
   "algorithm",
   "algorithmic",
   "tikzcd",
+  "tikzpicture",
+  "axis",
+  "scope",
+  "pgfplots",
+  "wraptable",
+  "wrapfigure",
+  "subfigure",
+  "subtable",
   "abstract"
 ]);
 
@@ -523,13 +531,23 @@ function stripLeadingWhitespaceAndLatexComments(text: string): string {
 }
 
 function containsLatexDocumentMarkers(text: string): boolean {
-  return /\\documentclass(?:\[[^\]]*\])?\{[^}]+\}/.test(text) && /\\begin\{document\}/.test(text);
+  const cleaned = stripLatexCommentsPreservingLines(text);
+  return /\\documentclass(?:\[[^\]]*\])?\{[^}]+\}/.test(cleaned) && /\\begin\{document\}/.test(cleaned);
 }
 
 function isLatexDocumentAtMeaningfulStart(text: string): boolean {
   const meaningfulStart = stripLeadingWhitespaceAndLatexComments(text);
+  const docClassMatch = /\\documentclass(?:\[[^\]]*\])?\{[^}]+\}/.exec(meaningfulStart);
 
-  return /^\\documentclass(?:\[[^\]]*\])?\{[^}]+\}/.test(meaningfulStart) && /\\begin\{document\}/.test(meaningfulStart);
+  if (!docClassMatch || !/\\begin\{document\}/.test(meaningfulStart)) return false;
+
+  const docClassIndex = meaningfulStart.indexOf(docClassMatch[0]);
+  const leadingText = meaningfulStart.slice(0, docClassIndex).trim();
+
+  if (leadingText.length === 0) return true;
+
+  // If there is leading text before \documentclass, it must look like LaTeX commands, not prose.
+  return /^\\(?:RequirePackage|PassOptionsToPackage|def|new|provide|let|input|include|usepackage)\b/.test(leadingText);
 }
 
 function isFullLatexDocument(text: string): boolean {
@@ -1217,12 +1235,78 @@ function buildMetadata(
 }
 
 function finalizeMetadata(metadata: ConversionMetadata, latex: string, validationIssues: ValidationIssue[]): ConversionMetadata {
+  const status = getFinalStatus(metadata.status, metadata.compileResult, validationIssues, metadata);
   return {
     ...metadata,
     outputLength: latex.length,
     outputChecksum: checksumText(latex),
-    status: hasFatalValidationIssues(validationIssues) ? "failed" : metadata.status
+    status
   };
+}
+
+function getFinalStatus(
+  status: ConversionMetadata["status"],
+  compileResult: CompileResult | undefined,
+  validationIssues: ValidationIssue[],
+  metadata?: Pick<ConversionMetadata, "fileRole" | "conversionMode" | "inputType">
+): ConversionMetadata["status"] {
+  if (status === "failed") {
+    return "failed";
+  }
+
+  if (compileResult?.status === "failed") {
+    return "compile-failed";
+  }
+
+  const isFragment = metadata?.fileRole === "fragment";
+  const hasErrors = hasFatalValidationIssues(validationIssues);
+  const hasWarnings = validationIssues.some((issue) => issue.severity === "warning");
+
+  if (hasErrors) {
+    if (validationIssues.some((issue) => isProductionGateFailure(issue, metadata))) {
+      return "failed";
+    }
+
+    if (isFragment) {
+      return metadata?.conversionMode === "recover-raw" ? "fragment-preserved" : "preserved-with-warnings";
+    }
+
+    return status === "preserved" ? "validation-warning" : "failed";
+  }
+
+  if (hasWarnings) {
+    if (isFragment && metadata?.conversionMode === "recover-raw") {
+      return "fragment-preserved";
+    }
+    return status === "preserved" ? "preserved-with-warnings" : "validation-warning";
+  }
+
+  if (isFragment) {
+    if (metadata?.conversionMode === "compile-ready" && compileResult?.status === "skipped") {
+      return "compile-skipped";
+    }
+    return metadata?.conversionMode === "recover-raw" ? "fragment-preserved" : "preserved";
+  }
+
+  return status;
+}
+
+function isProductionGateFailure(issue: ValidationIssue, metadata?: Pick<ConversionMetadata, "fileRole" | "inputType">): boolean {
+  const isFragment = metadata?.fileRole === "fragment" || metadata?.inputType === "latex-fragment";
+
+  if (isFragment) {
+    // Fragments are allowed to miss document structure
+    if (/(Missing final integrity marker|Output does not end with \\end\{document\}|Missing \\end\{document\}|Missing real \\begin\{document\})/i.test(issue.message)) {
+      return false;
+    }
+  }
+
+  return (
+    issue.severity === "error" &&
+    /(Missing final integrity marker|Raw PDF internals|unclosed verbatim|Output does not end with \\end\{document\}|Missing \\end\{document\}|Missing real \\begin\{document\})/i.test(
+      issue.message
+    )
+  );
 }
 
 function checksumText(value: string): string {
@@ -3110,8 +3194,9 @@ const knownLatexEnvironments = new Set([
   "subequations",
   "tikzpicture",
   "lstlisting",
-  "environment",
-  "plainenvironment",
+  "Code",
+  "FullCode",
+  "environment",  "plainenvironment",
   "contextenvironment",
   "pgfmanualentry",
   "codeexample",
@@ -3129,7 +3214,8 @@ function validateLatex(
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const lineAt = createLineNumberLookup(latex);
-  const checkedLatex = maskVerbatimLikeBlocks(latex);
+  const knownEnvironments = getKnownEnvironmentsForDocument(latex);
+  const checkedLatex = maskVerbatimLikeBlocks(stripLatexCommentsPreservingLines(latex), knownEnvironments);
   const sourceText = options.sourceText ?? "";
   const hasMarkerInSource = sourceText.replace(/\\_/g, "_").includes(finalIntegrityMarker);
 
@@ -3166,7 +3252,9 @@ function validateLatex(
     lineAt
   );
 
-  if (!/\\begin\{document\}/.test(checkedLatex)) {
+  const isFragment = options.inputType === "latex-fragment";
+
+  if (!isFragment && !/\\begin\{document\}/.test(checkedLatex)) {
     issues.push({
       severity: "error",
       message: "Missing real \\begin{document} in generated LaTeX output.",
@@ -3174,7 +3262,7 @@ function validateLatex(
     });
   }
 
-  if (!/\\end\{document\}/.test(checkedLatex)) {
+  if (!isFragment && !/\\end\{document\}/.test(checkedLatex)) {
     issues.push({
       severity: "error",
       message: "Missing \\end{document} in full LaTeX document output.",
@@ -3182,7 +3270,7 @@ function validateLatex(
     });
   }
 
-  if ((options.inputType === "latex-document" || isFullLatexDocument(latex)) && !/\\end\{document\}\s*$/.test(checkedLatex)) {
+  if (!isFragment && (options.inputType === "latex-document" || isFullLatexDocument(latex)) && !/\\end\{document\}\s*$/.test(checkedLatex)) {
     issues.push({
       severity: "error",
       message: "Output does not end with \\end{document}.",
@@ -3227,7 +3315,7 @@ function validateLatex(
     }
   }
 
-  issues.push(...validateEnvironmentBalanceAndNesting(checkedLatex, lineAt));
+  issues.push(...validateEnvironmentBalanceAndNesting(checkedLatex, lineAt, knownEnvironments));
 
   const dollarIssue = findUnmatchedSingleDollarIssue(checkedLatex, lineAt);
   if (dollarIssue) {
@@ -3273,8 +3361,42 @@ function latexIncludesIntegrityMarker(latex: string): boolean {
   return normalized.includes(finalIntegrityMarker);
 }
 
-function maskVerbatimLikeBlocks(latex: string): string {
-  const tokenPattern = /\\begin\{(verbatim|lstlisting)\}/g;
+function stripLatexCommentsPreservingLines(latex: string): string {
+  return latex
+    .split("\n")
+    .map((line) => {
+      const commentIndex = findUnescapedPercentIndex(line);
+      if (commentIndex < 0) {
+        return line;
+      }
+
+      return `${line.slice(0, commentIndex)}${" ".repeat(line.length - commentIndex)}`;
+    })
+    .join("\n");
+}
+
+function findUnescapedPercentIndex(line: string): number {
+  for (let index = 0; index < line.length; index += 1) {
+    if (line[index] !== "%") {
+      continue;
+    }
+
+    let slashCount = 0;
+    for (let cursor = index - 1; cursor >= 0 && line[cursor] === "\\"; cursor -= 1) {
+      slashCount += 1;
+    }
+
+    if (slashCount % 2 === 0) {
+      return index;
+    }
+  }
+
+  return -1;
+}
+
+function maskVerbatimLikeBlocks(latex: string, knownEnvironments = getKnownEnvironmentsForDocument(latex)): string {
+  const codeEnvironments = getCodeLikeEnvironments(knownEnvironments);
+  const tokenPattern = new RegExp(`\\\\begin\\{(${[...codeEnvironments].map(escapeRegex).join("|")})\\}`, "g");
   const chunks: string[] = [];
   let cursor = 0;
   let match: RegExpExecArray | null;
@@ -3299,6 +3421,49 @@ function maskVerbatimLikeBlocks(latex: string): string {
   return chunks.join("");
 }
 
+function getCodeLikeEnvironments(knownEnvironments: Set<string>): Set<string> {
+  return new Set(
+    [...knownEnvironments].filter(
+      (environment) =>
+        /^(?:verbatim|lstlisting|codeexample|Code|FullCode)$/i.test(environment) ||
+        /(?:code|listing|example)$/i.test(environment)
+    )
+  );
+}
+
+function getKnownEnvironmentsForDocument(latex: string): Set<string> {
+  const environments = new Set(knownLatexEnvironments);
+  const preamble = getDocumentPreamble(latex);
+  const definitionPatterns = [
+    /\\(?:NewDocumentEnvironment|RenewDocumentEnvironment|DeclareDocumentEnvironment)\s*\{([^}]+)\}/g,
+    /\\(?:newenvironment|renewenvironment)\s*\{([^}]+)\}/g,
+    /\\(?:newtcolorbox|renewtcolorbox|newtcblisting|renewtcblisting|NewTCBListing|RenewTCBListing)\s*\{([^}]+)\}/g
+  ];
+
+  for (const pattern of definitionPatterns) {
+    for (const match of preamble.matchAll(pattern)) {
+      if (match[1]) {
+        environments.add(match[1]);
+      }
+    }
+  }
+
+  if (/\\usetikzlibrary\{[^}]*\bquantikz2?\b[^}]*\}/.test(preamble)) {
+    environments.add("quantikz");
+  }
+
+  return environments;
+}
+
+function getDocumentPreamble(latex: string): string {
+  const beginMatch = /\\begin\{document\}/.exec(latex);
+  return beginMatch ? latex.slice(0, beginMatch.index) : latex;
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[\\^$.*+?()[\]{}|]/g, "\\$&");
+}
+
 function addDuplicateIssue(
   issues: ValidationIssue[],
   latex: string,
@@ -3318,7 +3483,7 @@ function addDuplicateIssue(
   }
 }
 
-function validateEnvironmentBalanceAndNesting(latex: string, lineAt: LineLookup): ValidationIssue[] {
+function validateEnvironmentBalanceAndNesting(latex: string, lineAt: LineLookup, knownEnvironments = knownLatexEnvironments): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const stack: EnvironmentStackEntry[] = [];
   const displayLines: number[] = [];
@@ -3371,7 +3536,7 @@ function validateEnvironmentBalanceAndNesting(latex: string, lineAt: LineLookup)
         });
       }
 
-      if (!knownLatexEnvironments.has(beginEnvironment)) {
+      if (!knownEnvironments.has(beginEnvironment)) {
         issues.push({
           severity: "info",
           message: `Environment "${beginEnvironment}" is not in the converter's known environment list.`,
@@ -3451,7 +3616,7 @@ function findDocumentLevelCommandInBodyIssue(latex: string, lineAt: LineLookup):
 
   const bodyStart = beginMatch.index + beginMatch[0].length;
   const body = latex.slice(bodyStart, lastEndMatch.index);
-  const commandMatch = /(^|\n)[ \t]*(\\(?:documentclass|usepackage|newcommand|renewcommand|newtheorem|DeclareMathOperator|geometry|title|author|date)\b|\\(?:begin|end)\{document\})/.exec(body);
+  const commandMatch = /(^|\n)[ \t]*(\\(?:documentclass|usepackage|newcommand|renewcommand|newtheorem|DeclareMathOperator|geometry)\b|\\(?:begin|end)\{document\})/.exec(body);
 
   if (!commandMatch) {
     return null;

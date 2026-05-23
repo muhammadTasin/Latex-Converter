@@ -1,0 +1,841 @@
+{
+  "projects": [
+    {
+      "name": "arXiv-1709.06005v2",
+      "fileCount": 2,
+      "status": "compile-failed",
+      "compileStatus": "failed",
+      "warnings": 4,
+      "issues": 111,
+      "mainFile": "manual.tex"
+    },
+    {
+      "name": "arXiv-1809.00384v1",
+      "fileCount": 1,
+      "status": "validation-warning",
+      "compileStatus": "unavailable",
+      "warnings": 3,
+      "issues": 35,
+      "mainFile": "manuskryptszarek.tex"
+    },
+    {
+      "name": "arXiv-1809.03842v8",
+      "fileCount": 2,
+      "status": "compile-failed",
+      "compileStatus": "failed",
+      "warnings": 3,
+      "issues": 1,
+      "mainFile": "quantikz_manual_new.tex"
+    },
+    {
+      "name": "arXiv-2310.00367v2",
+      "fileCount": 39,
+      "status": "compile-failed",
+      "compileStatus": "failed",
+      "warnings": 7,
+      "issues": 2,
+      "mainFile": "figures\\examples\\copying\\clima-13b\\3-full.tex"
+    },
+    {
+      "name": "completeness_validator_fix_bundle",
+      "fileCount": 2,
+      "status": "failed",
+      "compileStatus": "unavailable",
+      "warnings": 5,
+      "issues": 3,
+      "mainFile": "completeness_validator_fix_bundle\\README_FIX.md"
+    },
+    {
+      "name": "latex-converter-final-all-phases-fix",
+      "fileCount": 2,
+      "status": "converted",
+      "compileStatus": "unavailable",
+      "warnings": 2,
+      "issues": 0,
+      "mainFile": "latex-converter-final-all-phases-fix\\fixtures\\hard-research-mixture-input.txt"
+    },
+    {
+      "name": "pdf_quality_modes_fix_bundle",
+      "fileCount": 1,
+      "status": "converted",
+      "compileStatus": "unavailable",
+      "warnings": 2,
+      "issues": 0,
+      "mainFile": "pdf_quality_modes_fix_bundle\\README_FIX.md"
+    }
+  ],
+  "singleFiles": [
+    {
+      "filename": "manual.tex",
+      "project": "arXiv-1709.06005v2",
+      "role": "full-document",
+      "status": "preserved-with-warnings",
+      "checksumMatch": false,
+      "hasFullDoc": true,
+      "detectedFullDoc": true,
+      "environmentsFound": [
+        "tikzpicture",
+        "lstlisting",
+        "tabular",
+        "table"
+      ],
+      "environmentsPreserved": [
+        "tikzpicture",
+        "lstlisting",
+        "tabular",
+        "table"
+      ]
+    },
+    {
+      "filename": "tikz-network.sty",
+      "project": "arXiv-1709.06005v2",
+      "role": "dependency-library",
+      "status": "preserved",
+      "checksumMatch": true,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "scope"
+      ],
+      "environmentsPreserved": [
+        "scope"
+      ]
+    },
+    {
+      "filename": "manuskryptszarek.tex",
+      "project": "arXiv-1809.00384v1",
+      "role": "full-document",
+      "status": "preserved-with-warnings",
+      "checksumMatch": false,
+      "hasFullDoc": true,
+      "detectedFullDoc": true,
+      "environmentsFound": [
+        "tikzpicture",
+        "axis",
+        "figure",
+        "equation"
+      ],
+      "environmentsPreserved": [
+        "tikzpicture",
+        "axis",
+        "figure",
+        "equation"
+      ]
+    },
+    {
+      "filename": "quantikz_manual_new.tex",
+      "project": "arXiv-1809.03842v8",
+      "role": "full-document",
+      "status": "preserved",
+      "checksumMatch": false,
+      "hasFullDoc": true,
+      "detectedFullDoc": true,
+      "environmentsFound": [
+        "Code",
+        "FullCode",
+        "quantikz",
+        "tikzpicture",
+        "lstlisting",
+        "verbatim",
+        "tabular"
+      ],
+      "environmentsPreserved": [
+        "Code",
+        "FullCode",
+        "quantikz",
+        "tikzpicture",
+        "lstlisting",
+        "verbatim",
+        "tabular"
+      ]
+    },
+    {
+      "filename": "tikzlibraryquantikz2.code.tex",
+      "project": "arXiv-1809.03842v8",
+      "role": "dependency-library",
+      "status": "preserved",
+      "checksumMatch": true,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "tikzpicture",
+        "scope"
+      ],
+      "environmentsPreserved": [
+        "tikzpicture",
+        "scope"
+      ]
+    },
+    {
+      "filename": "automatikz.bib",
+      "project": "arXiv-2310.00367v2",
+      "role": "bibliography",
+      "status": "preserved",
+      "checksumMatch": true,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [],
+      "environmentsPreserved": []
+    },
+    {
+      "filename": "automatikz.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": true,
+      "detectedFullDoc": false,
+      "environmentsFound": [],
+      "environmentsPreserved": []
+    },
+    {
+      "filename": "figures\\clima\\barchart.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "tikzpicture",
+        "axis"
+      ],
+      "environmentsPreserved": [
+        "tikzpicture",
+        "axis"
+      ]
+    },
+    {
+      "filename": "figures\\clima\\contour.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "tikzpicture",
+        "axis"
+      ],
+      "environmentsPreserved": [
+        "tikzpicture",
+        "axis"
+      ]
+    },
+    {
+      "filename": "figures\\clima\\mlp.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "tikzpicture"
+      ],
+      "environmentsPreserved": [
+        "tikzpicture"
+      ]
+    },
+    {
+      "filename": "figures\\clima.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "tikzpicture"
+      ],
+      "environmentsPreserved": [
+        "tikzpicture"
+      ]
+    },
+    {
+      "filename": "figures\\examples\\bad\\clima-13b.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "tikzpicture"
+      ],
+      "environmentsPreserved": [
+        "tikzpicture"
+      ]
+    },
+    {
+      "filename": "figures\\examples\\bad\\gpt-4.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "tikzpicture",
+        "axis"
+      ],
+      "environmentsPreserved": [
+        "tikzpicture",
+        "axis"
+      ]
+    },
+    {
+      "filename": "figures\\examples\\bad\\llama-13b.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "tikzpicture"
+      ],
+      "environmentsPreserved": [
+        "tikzpicture"
+      ]
+    },
+    {
+      "filename": "figures\\examples\\copying\\clima-13b\\1.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "tikzpicture"
+      ],
+      "environmentsPreserved": [
+        "tikzpicture"
+      ]
+    },
+    {
+      "filename": "figures\\examples\\copying\\clima-13b\\2.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "tikzpicture",
+        "axis"
+      ],
+      "environmentsPreserved": [
+        "tikzpicture",
+        "axis"
+      ]
+    },
+    {
+      "filename": "figures\\examples\\copying\\clima-13b\\3-full.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "full-document",
+      "status": "validation-warning",
+      "checksumMatch": false,
+      "hasFullDoc": true,
+      "detectedFullDoc": true,
+      "environmentsFound": [
+        "tikzpicture"
+      ],
+      "environmentsPreserved": [
+        "tikzpicture"
+      ]
+    },
+    {
+      "filename": "figures\\examples\\copying\\clima-13b\\3.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "tikzpicture"
+      ],
+      "environmentsPreserved": [
+        "tikzpicture"
+      ]
+    },
+    {
+      "filename": "figures\\examples\\copying\\gpt-4\\1.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "tikzpicture",
+        "scope"
+      ],
+      "environmentsPreserved": [
+        "tikzpicture",
+        "scope"
+      ]
+    },
+    {
+      "filename": "figures\\examples\\copying\\gpt-4\\2.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "tikzpicture",
+        "axis"
+      ],
+      "environmentsPreserved": [
+        "tikzpicture",
+        "axis"
+      ]
+    },
+    {
+      "filename": "figures\\examples\\copying\\gpt-4\\3-full.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "full-document",
+      "status": "preserved",
+      "checksumMatch": false,
+      "hasFullDoc": true,
+      "detectedFullDoc": true,
+      "environmentsFound": [
+        "tikzpicture"
+      ],
+      "environmentsPreserved": [
+        "tikzpicture"
+      ]
+    },
+    {
+      "filename": "figures\\examples\\copying\\gpt-4\\3.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "tikzpicture"
+      ],
+      "environmentsPreserved": [
+        "tikzpicture"
+      ]
+    },
+    {
+      "filename": "figures\\examples\\datikz\\1.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "tikzpicture"
+      ],
+      "environmentsPreserved": [
+        "tikzpicture"
+      ]
+    },
+    {
+      "filename": "figures\\examples\\datikz\\2.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "tikzpicture",
+        "axis"
+      ],
+      "environmentsPreserved": [
+        "tikzpicture",
+        "axis"
+      ]
+    },
+    {
+      "filename": "figures\\examples\\datikz\\3.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "tikzpicture"
+      ],
+      "environmentsPreserved": [
+        "tikzpicture"
+      ]
+    },
+    {
+      "filename": "figures\\examples\\datikz\\4.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "tikzpicture"
+      ],
+      "environmentsPreserved": [
+        "tikzpicture"
+      ]
+    },
+    {
+      "filename": "figures\\examples\\good\\clima-13b.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "tikzpicture",
+        "scope"
+      ],
+      "environmentsPreserved": [
+        "tikzpicture",
+        "scope"
+      ]
+    },
+    {
+      "filename": "figures\\examples\\good\\gpt-4.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "tikzpicture"
+      ],
+      "environmentsPreserved": [
+        "tikzpicture"
+      ]
+    },
+    {
+      "filename": "figures\\examples\\good\\llama-13b.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "tikzpicture"
+      ],
+      "environmentsPreserved": [
+        "tikzpicture"
+      ]
+    },
+    {
+      "filename": "requirements.txt",
+      "project": "arXiv-2310.00367v2",
+      "role": "plain-text",
+      "status": "converted",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [],
+      "environmentsPreserved": []
+    },
+    {
+      "filename": "sections\\acknowledgements.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [],
+      "environmentsPreserved": []
+    },
+    {
+      "filename": "sections\\analysis.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "figure"
+      ],
+      "environmentsPreserved": [
+        "figure"
+      ]
+    },
+    {
+      "filename": "sections\\appendix.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "wraptable",
+        "tabular",
+        "table",
+        "figure"
+      ],
+      "environmentsPreserved": [
+        "wraptable",
+        "tabular",
+        "table",
+        "figure"
+      ]
+    },
+    {
+      "filename": "sections\\conclusion.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [],
+      "environmentsPreserved": []
+    },
+    {
+      "filename": "sections\\data.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "wraptable",
+        "tabular"
+      ],
+      "environmentsPreserved": [
+        "wraptable",
+        "tabular"
+      ]
+    },
+    {
+      "filename": "sections\\ethics.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [],
+      "environmentsPreserved": []
+    },
+    {
+      "filename": "sections\\experiments.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "figure"
+      ],
+      "environmentsPreserved": [
+        "figure"
+      ]
+    },
+    {
+      "filename": "sections\\introduction.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "figure"
+      ],
+      "environmentsPreserved": [
+        "figure"
+      ]
+    },
+    {
+      "filename": "sections\\methods.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [],
+      "environmentsPreserved": []
+    },
+    {
+      "filename": "sections\\related.tex",
+      "project": "arXiv-2310.00367v2",
+      "role": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [],
+      "environmentsPreserved": []
+    },
+    {
+      "filename": "styles\\automatikz.sty",
+      "project": "arXiv-2310.00367v2",
+      "role": "dependency-library",
+      "status": "preserved",
+      "checksumMatch": true,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [],
+      "environmentsPreserved": []
+    },
+    {
+      "filename": "styles\\fancyhdr.sty",
+      "project": "arXiv-2310.00367v2",
+      "role": "dependency-library",
+      "status": "preserved",
+      "checksumMatch": true,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [],
+      "environmentsPreserved": []
+    },
+    {
+      "filename": "styles\\iclr2024_conference.sty",
+      "project": "arXiv-2310.00367v2",
+      "role": "dependency-library",
+      "status": "preserved",
+      "checksumMatch": true,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "tabular"
+      ],
+      "environmentsPreserved": [
+        "tabular"
+      ]
+    },
+    {
+      "filename": "styles\\natbib.sty",
+      "project": "arXiv-2310.00367v2",
+      "role": "dependency-library",
+      "status": "preserved",
+      "checksumMatch": true,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [],
+      "environmentsPreserved": []
+    },
+    {
+      "filename": "completeness_validator_fix_bundle\\README_FIX.md",
+      "project": "completeness_validator_fix_bundle",
+      "role": "markdown",
+      "status": "failed",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [],
+      "environmentsPreserved": [
+        "verbatim"
+      ]
+    },
+    {
+      "filename": "completeness_validator_fix_bundle\\scripts\\fixtures\\hard_research_mixture_input.txt",
+      "project": "completeness_validator_fix_bundle",
+      "role": "plain-text",
+      "status": "preserved",
+      "checksumMatch": false,
+      "hasFullDoc": true,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "tabular",
+        "table",
+        "align",
+        "equation",
+        "cases"
+      ],
+      "environmentsPreserved": []
+    },
+    {
+      "filename": "latex-converter-final-all-phases-fix\\fixtures\\hard-research-mixture-input.txt",
+      "project": "latex-converter-final-all-phases-fix",
+      "role": "plain-text",
+      "status": "converted",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [
+        "equation"
+      ],
+      "environmentsPreserved": [
+        "verbatim",
+        "tabular",
+        "table",
+        "equation"
+      ]
+    },
+    {
+      "filename": "latex-converter-final-all-phases-fix\\README.md",
+      "project": "latex-converter-final-all-phases-fix",
+      "role": "markdown",
+      "status": "converted",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [],
+      "environmentsPreserved": [
+        "verbatim"
+      ]
+    },
+    {
+      "filename": "pdf_quality_modes_fix_bundle\\README_FIX.md",
+      "project": "pdf_quality_modes_fix_bundle",
+      "role": "markdown",
+      "status": "converted",
+      "checksumMatch": false,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "environmentsFound": [],
+      "environmentsPreserved": [
+        "verbatim"
+      ]
+    }
+  ],
+  "errors": [],
+  "scores": {
+    "projectHandling": 100,
+    "fullDocumentClassification": 71.42857142857143,
+    "dependencyLibrary": 100,
+    "bibliography": 100,
+    "fragmentClassification": 100,
+    "fragmentValidation": 100,
+    "rawPreservation": 95.1219512195122,
+    "compileStatus": 50,
+    "overall": 79.61672473867596
+  },
+  "topBugs": [
+    {
+      "file": "automatikz.tex",
+      "project": "arXiv-2310.00367v2",
+      "type": "classifier bug",
+      "detail": "Missed full document"
+    },
+    {
+      "file": "completeness_validator_fix_bundle\\scripts\\fixtures\\hard_research_mixture_input.txt",
+      "project": "completeness_validator_fix_bundle",
+      "type": "classifier bug",
+      "detail": "Missed full document"
+    },
+    {
+      "file": "completeness_validator_fix_bundle\\scripts\\fixtures\\hard_research_mixture_input.txt",
+      "project": "completeness_validator_fix_bundle",
+      "type": "converter bug",
+      "detail": "Lost environments: tabular, table, align, equation, cases"
+    }
+  ]
+}

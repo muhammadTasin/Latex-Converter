@@ -8,4 +8,8 @@ build/
 out/
 tsconfig.tsbuildinfo
 .ocr-cache/
-*.log
+*.logfixtures/aggressive/
+next-start.err.log
+next-start.out.log
+prod-server.err.log
+prod-server.out.log

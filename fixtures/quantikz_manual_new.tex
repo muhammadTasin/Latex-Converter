@@ -1,9 +1,11 @@
 \documentclass[aps,prx,reprint]{revtex4-2}
+%\documentclass{article}
 \usepackage{tikz}
 \usepackage[most]{tcolorbox}
 \usetikzlibrary{quantikz2}
 
 \newtcblisting{Code}{listing only}
+\NewTCBListing{FullCode}{m}{listing only}
 
 \begin{document}
 \title{Quantikz Manual}
@@ -18,9 +20,16 @@
 \end{quantikz}
 \end{Code}
 
+\begin{FullCode}{Example source}
+%\begin{document}
+\documentclass{article}
+\begin{quantikz}
+\lstick{\ket{0}} & \gate{X}
+\end{quantikz}
+\end{FullCode}
+
 \begin{quantikz}
 \lstick{\ket{0}} & \gate{H} & \meter{}
 \end{quantikz}
 
 \end{document}
-

@@ -1,10 +1,44 @@
 import fs from "node:fs";
 import path from "node:path";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const ts = require("typescript");
+const Module = require("node:module");
 
 const serverUrl = process.env.TEST_SERVER_URL ?? "http://localhost:3000";
 const workspaceRoot = process.cwd();
 const fixturePath = path.join(workspaceRoot, "fixtures", "ultra-hard-output-consistency-input.txt");
 const sourceText = fs.readFileSync(fixturePath, "utf8");
+const originalResolveFilename = Module._resolveFilename;
+
+Module._resolveFilename = function resolveFilename(request, parent, isMain, options) {
+  if (request.startsWith("@/")) {
+    return path.join(workspaceRoot, request.slice(2)) + ".ts";
+  }
+
+  return originalResolveFilename.call(this, request, parent, isMain, options);
+};
+
+require.extensions[".ts"] = function compileTypeScript(module, filename) {
+  const source = fs.readFileSync(filename, "utf8");
+  const output = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.CommonJS,
+      target: ts.ScriptTarget.ES2022,
+      esModuleInterop: true
+    }
+  }).outputText;
+  module._compile(output, filename);
+};
+
+const {
+  getDetectedDisplayValue,
+  getOutputHeading,
+  getSourceTip,
+  isCompileReadyDisabled,
+  shouldShowDocumentMetadataFields
+} = require("../lib/latex/display.ts");
 
 function assert(condition, message) {
   if (!condition) {
@@ -88,3 +122,28 @@ console.log("UI/API output consistency test passed");
 console.log(`Server: ${serverUrl}`);
 console.log(`Output length: ${data.latex.length}`);
 console.log(`Output checksum: ${data.metadata.outputChecksum}`);
+
+const dependencyPath = path.join(workspaceRoot, "fixtures", "tikzlibraryquantikz2.code.tex");
+const dependencySource = fs.readFileSync(dependencyPath, "utf8");
+const dependencyResponse = await fetch(`${serverUrl}/api/convert`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    text: dependencySource,
+    filename: "tikzlibraryquantikz2.code.tex",
+    fileSize: Buffer.byteLength(dependencySource, "utf8"),
+    conversionMode: "display-source"
+  })
+});
+const dependencyData = await dependencyResponse.json();
+assert(dependencyData.metadata?.fileRole === "dependency-library", "Quantikz dependency API response must report fileRole dependency-library.");
+assert(dependencyData.metadata?.status === "preserved", "Quantikz dependency API response must remain preserved.");
+assert(dependencyData.metadata?.outputLength === dependencySource.length, "Quantikz dependency output length must equal input character length.");
+assert(dependencyData.metadata?.outputChecksum === checksumText(dependencyData.latex), "Quantikz dependency checksum must match canonical output.");
+assert(dependencyData.latex === dependencySource, "Quantikz dependency output must preserve raw source exactly.");
+assert(getDetectedDisplayValue(dependencyData.metadata) === "dependency-library", "UI detected label should use fileRole for dependency libraries.");
+assert(getOutputHeading(dependencyData.metadata) === "Raw Dependency Source", "UI output heading should identify raw dependency source.");
+assert(isCompileReadyDisabled(dependencyData.metadata), "Compile-ready should be disabled for standalone dependency libraries.");
+assert(!shouldShowDocumentMetadataFields(dependencyData.metadata), "Title and Author fields should be hidden for standalone dependency libraries.");
+assert(getSourceTip(dependencyData.metadata) === "Dependency file detected. Use this with a main .tex document.", "Dependency source tip should be shown.");
+console.log("Quantikz dependency UI/API consistency test passed");
