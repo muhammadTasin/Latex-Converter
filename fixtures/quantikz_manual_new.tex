@@ -1,0 +1,26 @@
+\documentclass[aps,prx,reprint]{revtex4-2}
+\usepackage{tikz}
+\usepackage[most]{tcolorbox}
+\usetikzlibrary{quantikz2}
+
+\newtcblisting{Code}{listing only}
+
+\begin{document}
+\title{Quantikz Manual}
+\author{Package Maintainer}
+\maketitle
+
+\section{Basic Circuit}
+\begin{Code}
+\begin{quantikz}
+\lstick{\ket{0}} & \gate{H} & \ctrl{1} & \qw \\
+\lstick{\ket{0}} & \qw      & \targ{}  & \qw
+\end{quantikz}
+\end{Code}
+
+\begin{quantikz}
+\lstick{\ket{0}} & \gate{H} & \meter{}
+\end{quantikz}
+
+\end{document}
+

@@ -1,6 +1,22 @@
 import { getLanguage } from "@/lib/languages";
+import { validateLatexCompileProject } from "@/lib/latex/compile";
+import { maxConvertibleBytes } from "@/lib/latex/constants";
 import { escapeLatex, normalizeWhitespace, toCitationKey } from "@/lib/latex/sanitize";
-import type { ConversionMetadata, DetectedInputType, LatexConversionInput, LatexConversionResult, ValidationIssue, LatexSnippetMode } from "@/lib/latex/types";
+import type {
+  CompileResult,
+  ConversionMetadata,
+  DetectedInputType,
+  LatexConversionInput,
+  LatexConversionResult,
+  LatexFileRole,
+  LatexOutputType,
+  LatexProjectConversionInput,
+  LatexProjectRole,
+  LatexSnippetMode,
+  ValidationIssue
+} from "@/lib/latex/types";
+
+export { maxConvertibleBytes };
 
 type Block =
   | { type: "heading"; level: 1 | 2 | 3; text: string }
@@ -48,6 +64,16 @@ type BuildDocumentOptions = {
   body: string;
   languageCode: string;
   packages?: Partial<PackageRequirements>;
+};
+
+type LatexFileClassification = {
+  fileRole: LatexFileRole;
+  inputType: DetectedInputType;
+  outputType: LatexOutputType;
+  projectRole: LatexProjectRole;
+  rawSourceConfidence: number;
+  compileConfidence: number;
+  visualFidelityConfidence: number;
 };
 
 type SectionHeading =
@@ -153,8 +179,7 @@ const mathEnvironments = new Set([
   "array"
 ]);
 
-export const maxConvertibleBytes = 2 * 1024 * 1024;
-export const supportedTextFileExtensions = new Set(["tex", "txt", "md", "latex"]);
+export const supportedTextFileExtensions = new Set(["tex", "txt", "md", "latex", "sty", "cls", "bbx", "cbx", "bib"]);
 const largePreviewThreshold = 1.5 * 1024 * 1024;
 const finalIntegrityMarker = "END_TEST_MARKER_OMEGA_999";
 
@@ -212,8 +237,42 @@ export function convertTextToLatex(input: LatexConversionInput): LatexConversion
 
   const normalized = normalizeWhitespace(sourceText);
   const preparedText = shouldPreserveInputExactly(normalized) ? normalized : normalizeStructuredLabels(normalized);
-  const inputType = detectInputType(preparedText, input.filename);
-  const metadata = buildMetadata(input, inputType, "converted", sourceBytes);
+  const classification = classifyLatexFile(preparedText, input.filename, input.sourceKind);
+  const inputType = classification.inputType;
+  const metadata = buildMetadata(input, inputType, "converted", sourceBytes, classification);
+
+  if (classification.fileRole === "dependency-library" || classification.fileRole === "bibliography") {
+    const issue: ValidationIssue = {
+      severity: "info",
+      message:
+        classification.fileRole === "dependency-library"
+          ? "Dependency file detected. Use with a main .tex document."
+          : "Bibliography file detected. Keep this file beside the main document and cite it from LaTeX.",
+      suggestedFix:
+        classification.fileRole === "dependency-library"
+          ? "Upload the main document with this dependency for project-aware compile validation."
+          : "Upload the main document with this bibliography file for project-aware compile validation."
+    };
+    const compileResult =
+      conversionMode === "compile-ready"
+        ? skippedCompileResult("Compile-ready document output is disabled for dependency and bibliography files.")
+        : skippedCompileResult("Compile validation is skipped for raw dependency and bibliography files.");
+    const rawMetadata = {
+      ...metadata,
+      status: "preserved" as const,
+      compileConfidence: compileResult.status === "success" ? 0.9 : 0,
+      compileResult
+    };
+
+    const rawSource = sourceText;
+    return {
+      latex: rawSource,
+      warnings: [issue.message],
+      validationIssues: [issue],
+      metadata: finalizeMetadata(rawMetadata, rawSource, [issue]),
+      stats: buildLatexStats(rawSource, rawSource, [])
+    };
+  }
 
   if (conversionMode === "recover-raw" && inputType === "plain-text") {
     const recoveredDocument = recoverEmbeddedLatexDocument(preparedText);
@@ -277,13 +336,27 @@ export function convertTextToLatex(input: LatexConversionInput): LatexConversion
   }
 
   if (inputType === "latex-document" || inputType === "latex-fragment") {
-    const latex = preserveLatexSource(preparedText, input, language.code);
+    const latex = inputType === "latex-fragment" && conversionMode === "recover-raw" ? preparedText : preserveLatexSource(preparedText, input, language.code);
     const validationIssues = validateLatex(latex, { latexMode: true, inputType, inputLength: preparedText.length, sourceText: preparedText });
+    const compileResult =
+      conversionMode === "compile-ready"
+        ? validateLatexCompileProject([{ filename: input.filename ?? "main.tex", text: latex, fileSize: sourceBytes }], input.filename ?? "main.tex")
+        : skippedCompileResult("Compile validation was not requested.");
     return {
       latex,
       warnings: [...warnings, ...issuesToWarnings(validationIssues)],
       validationIssues,
-      metadata: finalizeMetadata({ ...metadata, status: "preserved" }, latex, validationIssues),
+      metadata: finalizeMetadata(
+        {
+          ...metadata,
+          outputType: inputType === "latex-fragment" && conversionMode === "recover-raw" ? "latex-fragment" : metadata.outputType,
+          status: "preserved",
+          compileConfidence: compileResult.status === "success" ? 0.9 : compileResult.status === "failed" ? 0.2 : 0,
+          compileResult
+        },
+        latex,
+        validationIssues
+      ),
       stats: buildLatexStats(preparedText, latex, [])
     };
   }
@@ -312,8 +385,111 @@ export function convertTextToLatex(input: LatexConversionInput): LatexConversion
     latex,
     warnings: [...warnings, ...issuesToWarnings(validationIssues)],
     validationIssues,
-    metadata: finalizeMetadata(metadata, latex, validationIssues),
+    metadata: finalizeMetadata(
+      {
+        ...metadata,
+        compileResult: skippedCompileResult("Compile validation is skipped for generated plain text and Markdown conversion."),
+        compileConfidence: 0
+      },
+      latex,
+      validationIssues
+    ),
     stats
+  };
+}
+
+export function convertLatexProject(input: LatexProjectConversionInput): LatexConversionResult {
+  const language = getLanguage(input.language);
+  const files = input.files.map((file) => ({
+    ...file,
+    fileSize: file.fileSize ?? getUtf8ByteLength(file.text),
+    classification: classifyLatexFile(file.text, file.filename)
+  }));
+  const mainFiles = files.filter((file) => file.classification.fileRole === "full-document");
+  const mainFile = mainFiles[0] ?? files.find((file) => file.classification.fileRole === "fragment") ?? files[0];
+
+  if (!mainFile) {
+    return convertTextToLatex({ text: "", language: language.code, conversionMode: input.conversionMode });
+  }
+
+  const mainResult = convertTextToLatex({
+    text: mainFile.text,
+    language: language.code,
+    filename: mainFile.filename,
+    fileSize: mainFile.fileSize,
+    conversionMode: mainFile.classification.fileRole === "fragment" ? (input.conversionMode ?? "recover-raw") : (input.conversionMode ?? "recover-raw")
+  });
+  const projectFiles = files.map((file) => ({
+    filename: file.filename,
+    fileRole: file.classification.fileRole,
+    projectRole:
+      file === mainFile
+        ? ("main-document" as const)
+        : file.classification.fileRole === "bibliography"
+          ? ("bibliography" as const)
+          : file.classification.fileRole === "dependency-library"
+            ? ("dependency" as const)
+            : file.classification.projectRole,
+    outputFilename: getOutputFilename(file.filename, file.classification.outputType),
+    status: "preserved" as const
+  }));
+  const projectWarnings: string[] = [];
+  const projectIssues: ValidationIssue[] = [];
+  const missingDependencies = findMissingProjectDependencies(mainFile.text, files.map((file) => file.filename));
+  let compileResult: CompileResult;
+
+  if (missingDependencies.length) {
+    compileResult = {
+      status: "failed",
+      message: "Output recovered, but compile failed because a dependency file is missing.",
+      missingFile: missingDependencies[0],
+      firstError: `Missing dependency: ${missingDependencies[0]}`,
+      suggestedFix: `Upload ${missingDependencies[0]} beside the main document.`
+    };
+    projectIssues.push({
+      severity: "warning",
+      message: `Missing project dependency: ${missingDependencies[0]}.`,
+      suggestedFix: compileResult.suggestedFix
+    });
+  } else {
+    compileResult = validateLatexCompileProject(
+      files.map((file) => ({ filename: file.filename, text: file.text, fileSize: file.fileSize })),
+      mainFile.filename
+    );
+  }
+
+  if (mainFiles.length === 1) {
+    projectWarnings.push("Main document detected. Dependency files were kept separate for compile validation.");
+  } else if (mainFiles.length > 1) {
+    projectWarnings.push("Multiple main documents were detected. The first full document was selected as the project main file.");
+  } else {
+    projectWarnings.push("No full document was detected. The first LaTeX fragment/source file was selected for preview.");
+  }
+
+  for (const file of files) {
+    if (file.classification.fileRole === "dependency-library") {
+      projectWarnings.push(`Dependency detected: ${file.filename}.`);
+    }
+  }
+
+  const validationIssues = [...mainResult.validationIssues, ...projectIssues];
+  const warnings = [...mainResult.warnings, ...projectWarnings, compileResult.message];
+  return {
+    ...mainResult,
+    warnings,
+    validationIssues,
+    metadata: finalizeMetadata(
+      {
+        ...mainResult.metadata,
+        projectRole: "project",
+        compileResult,
+        compileConfidence: compileResult.status === "success" ? 0.9 : compileResult.status === "failed" ? 0.2 : 0,
+        rawSourceConfidence: Math.min(0.98, mainResult.metadata.rawSourceConfidence ?? 0.8)
+      },
+      mainResult.latex,
+      validationIssues
+    ),
+    projectFiles
   };
 }
 
@@ -383,7 +559,11 @@ function hasResearchStructure(text: string): boolean {
 }
 
 function getConversionMode(input: LatexConversionInput): LatexSnippetMode {
-  return input.conversionMode === "recover-raw" ? "recover-raw" : "display-source";
+  if (input.conversionMode === "recover-raw" || input.conversionMode === "compile-ready") {
+    return input.conversionMode;
+  }
+
+  return "display-source";
 }
 
 function recoverEmbeddedLatexDocument(text: string): string | null {
@@ -1008,19 +1188,31 @@ function convertPlainTextDocument(text: string, input: LatexConversionInput, lan
   return { latex, blocks: parsed.blocks };
 }
 
-function buildMetadata(input: LatexConversionInput, inputType: DetectedInputType, status: ConversionMetadata["status"], sourceBytes: number): ConversionMetadata {
+function buildMetadata(
+  input: LatexConversionInput,
+  inputType: DetectedInputType,
+  status: ConversionMetadata["status"],
+  sourceBytes: number,
+  classification?: LatexFileClassification
+): ConversionMetadata {
+  const outputType = classification?.outputType ?? "latex-document";
   return {
     filename: input.filename,
     fileSize: sourceBytes,
     inputLength: input.text?.length ?? 0,
     outputLength: 0,
     inputType,
-    outputType: "latex-document",
-    outputFilename: getOutputFilename(input.filename),
+    outputType,
+    outputFilename: getOutputFilename(input.filename, outputType),
     outputChecksum: checksumText(""),
     status,
     largeInput: sourceBytes > largePreviewThreshold,
-    conversionMode: getConversionMode(input)
+    conversionMode: getConversionMode(input),
+    fileRole: classification?.fileRole ?? "plain-text",
+    projectRole: classification?.projectRole ?? "single-file",
+    rawSourceConfidence: classification?.rawSourceConfidence ?? 0.35,
+    compileConfidence: classification?.compileConfidence ?? 0,
+    visualFidelityConfidence: classification?.visualFidelityConfidence ?? 0
   };
 }
 
@@ -1045,6 +1237,14 @@ function checksumText(value: string): string {
 
 function hasFatalValidationIssues(validationIssues: ValidationIssue[]): boolean {
   return validationIssues.some((issue) => issue.severity === "error");
+}
+
+function skippedCompileResult(message: string): CompileResult {
+  return {
+    status: "skipped",
+    message,
+    suggestedFix: "Use compile-ready mode with a main document, or upload a multi-file project for compile validation."
+  };
 }
 
 function detectInputType(text: string, filename?: string): DetectedInputType {
@@ -1080,16 +1280,102 @@ function detectInputType(text: string, filename?: string): DetectedInputType {
   return "plain-text";
 }
 
+export function classifyLatexFile(text: string, filename?: string, sourceKind?: LatexConversionInput["sourceKind"]): LatexFileClassification {
+  if (sourceKind === "ocr") {
+    return classification("ocr-text", "plain-text", "latex-document", "single-file", 0.45, 0, 0.25);
+  }
+
+  const extension = getFileExtension(filename);
+  const safeFilename = sanitizeOutputFilename(filename ?? "").toLowerCase();
+
+  if (isBibliographySource(text, extension)) {
+    return classification("bibliography", "plain-text", "bibliography", "bibliography", 0.98, 0, 0.95);
+  }
+
+  if (isDependencyLibrarySource(text, filename)) {
+    return classification("dependency-library", "latex-fragment", "raw-source", "dependency", 0.98, 0, 0.95);
+  }
+
+  if (isLatexDocumentAtMeaningfulStart(text)) {
+    return classification("full-document", "latex-document", "latex-document", "main-document", 0.98, 0.7, 0.85);
+  }
+
+  const inputType = detectInputType(text, filename);
+
+  if (inputType === "latex-fragment") {
+    return classification("fragment", "latex-fragment", "latex-document", "fragment", 0.8, 0.55, 0.65);
+  }
+
+  if (inputType === "markdown" || inputType === "markdown-latex" || extension === "md") {
+    return classification("markdown", inputType, "latex-document", "single-file", 0.55, 0.3, 0.35);
+  }
+
+  if (/\.tex$/i.test(safeFilename) && isLatexSource(text)) {
+    return classification("fragment", "latex-fragment", "latex-document", "fragment", 0.75, 0.45, 0.6);
+  }
+
+  return classification("plain-text", inputType, "latex-document", "single-file", sourceKind === "pdf" ? 0.4 : 0.55, 0.25, sourceKind === "pdf" ? 0.25 : 0.35);
+}
+
+function classification(
+  fileRole: LatexFileRole,
+  inputType: DetectedInputType,
+  outputType: LatexOutputType,
+  projectRole: LatexProjectRole,
+  rawSourceConfidence: number,
+  compileConfidence: number,
+  visualFidelityConfidence: number
+): LatexFileClassification {
+  return { fileRole, inputType, outputType, projectRole, rawSourceConfidence, compileConfidence, visualFidelityConfidence };
+}
+
+function isBibliographySource(text: string, extension: string): boolean {
+  return extension === "bib" || /^\s*@(?:article|book|inproceedings|proceedings|misc|phdthesis|mastersthesis|techreport|unpublished)\s*\{/im.test(text);
+}
+
+function isDependencyLibrarySource(text: string, filename?: string): boolean {
+  const safeFilename = sanitizeOutputFilename(filename ?? "").toLowerCase();
+  const extension = getFileExtension(filename);
+  const dependencyFilename =
+    /^tikzlibrary.+\.code\.tex$/i.test(safeFilename) || ["sty", "cls", "bbx", "cbx"].includes(extension);
+  const dependencyMarkers =
+    /\\(?:ProvidesPackage|ProvidesClass|RequirePackage|pgfkeys|pgfdeclarelayer|NewDocumentCommand|NewDocumentEnvironment|DeclareMathOperator)\b/.test(text) ||
+    /\\(?:pgfqkeys|tikzcdset|tikzset|pgfutil@package|input pgf)/.test(text);
+
+  return (dependencyFilename || dependencyMarkers) && !/\\begin\{document\}/.test(text);
+}
+
+function findMissingProjectDependencies(mainText: string, filenames: string[]): string[] {
+  const available = new Set(filenames.map((filename) => sanitizeOutputFilename(filename).toLowerCase()));
+  const missing: string[] = [];
+
+  for (const match of mainText.matchAll(/\\usetikzlibrary\{([^}]+)\}/g)) {
+    const libraries = match[1].split(",").map((library) => library.trim()).filter(Boolean);
+    for (const library of libraries) {
+      const dependency = `tikzlibrary${library}.code.tex`;
+      if (!available.has(dependency.toLowerCase())) {
+        missing.push(dependency);
+      }
+    }
+  }
+
+  return [...new Set(missing)];
+}
+
 function hasMarkdownStructure(text: string): boolean {
   return /^#{1,6}\s+\S/m.test(text) || /^```/m.test(text) || /^\|.+\|\s*\n\|?\s*:?-{3,}:?/m.test(text);
 }
 
-function getOutputFilename(filename?: string): string {
+function getOutputFilename(filename?: string, outputType: LatexOutputType = "latex-document"): string {
   if (!filename) {
     return "converted_output.tex";
   }
 
   const safeName = sanitizeOutputFilename(filename);
+  if (outputType === "raw-source" || outputType === "bibliography") {
+    return safeName || "recovered_source.tex";
+  }
+
   const withoutExtension = safeName.replace(/\.[^.]+$/, "");
   return `${withoutExtension || "converted_output"}_converted.tex`;
 }
@@ -1119,7 +1405,7 @@ export function getUnsupportedFileIssue(filename: string): ValidationIssue {
   return {
     severity: "error",
     message: `Unsupported file type for "${sanitizeOutputFilename(filename)}".`,
-    suggestedFix: "Upload a .tex, .latex, .txt, or .md file."
+    suggestedFix: "Upload a .tex, .latex, .sty, .cls, .bbx, .cbx, .bib, .txt, or .md file."
   };
 }
 

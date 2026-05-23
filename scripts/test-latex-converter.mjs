@@ -28,7 +28,8 @@ require.extensions[".ts"] = function compileTypeScript(module, filename) {
   module._compile(output, filename);
 };
 
-const { convertTextToLatex, maxConvertibleBytes } = require("../lib/latex/converter.ts");
+const { classifyLatexFile, convertLatexProject, convertTextToLatex, maxConvertibleBytes } = require("../lib/latex/converter.ts");
+const { parseLatexCompileLog } = require("../lib/latex/compile.ts");
 const { extractPdfTextFromBytes } = require("../lib/pdf/extract.ts");
 
 function convert(input) {
@@ -1110,6 +1111,84 @@ const fencedLatexCodeExample = convertTextToLatex({
 assert(!fencedLatexCodeExample.validationIssues.some((issue) => /Duplicate \\documentclass|Duplicate \\begin\{document\}|Duplicate \\end\{document\}|Document-level LaTeX command/.test(issue.message)), "Test Z12: fenced LaTeX code should not execute as structure");
 assertIncludes(fencedLatexCodeExample.latex, "\\begin{verbatim}", "Test Z12: fenced LaTeX should become verbatim");
 assert(countRealDocumentclass(fencedLatexCodeExample.latex) === 1, "Test Z12: fenced example should not add a second real documentclass");
+
+const quantikzLibrarySource = fs.readFileSync(path.join("fixtures", "tikzlibraryquantikz2.code.tex"), "utf8");
+const quantikzManualSource = fs.readFileSync(path.join("fixtures", "quantikz_manual_new.tex"), "utf8");
+assert(classifyLatexFile(quantikzLibrarySource, "tikzlibraryquantikz2.code.tex").fileRole === "dependency-library", "Test AA0: classifier should recognize Quantikz library dependency");
+assert(classifyLatexFile(quantikzManualSource, "quantikz_manual_new.tex").fileRole === "full-document", "Test AA0: classifier should recognize Quantikz manual main document");
+
+const quantikzLibrary = convertTextToLatex({
+  text: quantikzLibrarySource,
+  filename: "tikzlibraryquantikz2.code.tex",
+  conversionMode: "display-source"
+});
+assert(quantikzLibrary.metadata.fileRole === "dependency-library", "Test AA1: tikzlibrary*.code.tex should be classified as dependency-library");
+assert(quantikzLibrary.metadata.outputType === "raw-source", "Test AA1: dependency library output should be raw source");
+assert(quantikzLibrary.metadata.status === "preserved", "Test AA1: dependency library should be preserved, not failed");
+assert(quantikzLibrary.latex === quantikzLibrarySource, "Test AA1: dependency library source should be preserved exactly");
+assertExcludes(quantikzLibrary.latex, "\\documentclass", "Test AA1: dependency library should not receive documentclass");
+assertExcludes(quantikzLibrary.latex, "\\maketitle", "Test AA1: dependency library should not receive maketitle");
+assert(quantikzLibrary.validationIssues.some((issue) => /Dependency file detected/.test(issue.message)), "Test AA1: dependency library should explain how to use it");
+
+const quantikzManual = convertTextToLatex({
+  text: quantikzManualSource,
+  filename: "quantikz_manual_new.tex",
+  conversionMode: "recover-raw"
+});
+assert(quantikzManual.metadata.fileRole === "full-document", "Test AA2: quantikz manual should be classified as full-document");
+assert(quantikzManual.metadata.inputType === "latex-document", "Test AA2: quantikz manual should remain a LaTeX document");
+assertIncludes(quantikzManual.latex, "\\documentclass[aps,prx,reprint]{revtex4-2}", "Test AA2: revtex documentclass should be preserved");
+assertIncludes(quantikzManual.latex, "\\usetikzlibrary{quantikz2}", "Test AA2: quantikz tikz library import should be preserved");
+assertIncludes(quantikzManual.latex, "\\newtcblisting{Code}", "Test AA2: custom Code/tcolorbox environment should be preserved");
+assertIncludes(quantikzManual.latex, "\\begin{quantikz}", "Test AA2: quantikz examples should be preserved");
+
+for (const [filename, source, role] of [
+  ["package-test.sty", "\\ProvidesPackage{package-test}\\NewDocumentCommand{\\foo}{}{bar}", "dependency-library"],
+  ["class-test.cls", "\\ProvidesClass{class-test}\\RequirePackage{article}", "dependency-library"],
+  ["biblatex-test.bbx", "\\ProvidesFile{biblatex-test.bbx}\\RequireBibliographyStyle{standard}", "dependency-library"],
+  ["biblatex-test.cbx", "\\ProvidesFile{biblatex-test.cbx}\\RequireCitationStyle{numeric}", "dependency-library"],
+  ["references.bib", "@article{key, title={A Paper}, author={A. Author}, year={2026}}", "bibliography"]
+]) {
+  const result = convertTextToLatex({ text: source, filename, conversionMode: "recover-raw" });
+  assert(result.metadata.fileRole === role, `Test AA3: ${filename} should be classified as ${role}`);
+  assert(result.latex === source, `Test AA3: ${filename} should be preserved as raw source`);
+  assert(result.metadata.status === "preserved", `Test AA3: ${filename} should not fail`);
+}
+
+const fragmentSource = String.raw`\begin{quantikz}
+\lstick{\ket{0}} & \gate{H}
+\end{quantikz}`;
+const rawFragment = convertTextToLatex({ text: fragmentSource, filename: "circuit.tex", conversionMode: "recover-raw" });
+assert(rawFragment.metadata.fileRole === "fragment", "Test AA4: standalone quantikz should be classified as fragment");
+assert(rawFragment.latex === fragmentSource, "Test AA4: recover-raw fragment should preserve exactly");
+const compileReadyFragment = convertTextToLatex({ text: fragmentSource, filename: "circuit.tex", conversionMode: "compile-ready" });
+assertIncludes(compileReadyFragment.latex, "\\documentclass[12pt]{article}", "Test AA4: compile-ready fragment should receive minimal preamble");
+assertIncludes(compileReadyFragment.latex, fragmentSource, "Test AA4: compile-ready fragment should include original fragment body");
+
+const quantikzProject = convertLatexProject({
+  files: [
+    { filename: "quantikz_manual_new.tex", text: quantikzManualSource },
+    { filename: "tikzlibraryquantikz2.code.tex", text: quantikzLibrarySource }
+  ],
+  conversionMode: "compile-ready"
+});
+assert(quantikzProject.metadata.projectRole === "project", "Test AA5: multi-file upload should be marked as project");
+assert(quantikzProject.projectFiles?.some((file) => file.filename === "quantikz_manual_new.tex" && file.projectRole === "main-document"), "Test AA5: project should identify main document");
+assert(quantikzProject.projectFiles?.some((file) => file.filename === "tikzlibraryquantikz2.code.tex" && file.projectRole === "dependency"), "Test AA5: project should identify dependency file");
+assertIncludes(quantikzProject.latex, "\\documentclass[aps,prx,reprint]{revtex4-2}", "Test AA5: project output should preview the main document");
+assertExcludes(quantikzProject.latex, "\\ProvidesFile{tikzlibraryquantikz2.code.tex}", "Test AA5: dependency source should not be merged into main body");
+assert(["success", "failed", "unavailable"].includes(quantikzProject.metadata.compileResult?.status ?? ""), "Test AA5: project should report compile validation state");
+
+const missingQuantikzProject = convertLatexProject({
+  files: [{ filename: "quantikz_manual_new.tex", text: quantikzManualSource }],
+  conversionMode: "compile-ready"
+});
+assert(missingQuantikzProject.metadata.compileResult?.status === "failed", "Test AA6: missing tikz library dependency should be reported as compile failure");
+assert(missingQuantikzProject.metadata.compileResult?.missingFile === "tikzlibraryquantikz2.code.tex", "Test AA6: missing dependency filename should be reported");
+
+const parsedCompileError = parseLatexCompileLog("! LaTeX Error: File `tikzlibraryquantikz2.code.tex' not found.\nl.17 \\\\begin{document}");
+assert(parsedCompileError.missingFile === "tikzlibraryquantikz2.code.tex", "Test AA7: compile log parser should extract missing file");
+assert(parsedCompileError.line === 17, "Test AA7: compile log parser should extract line number");
 
 console.log("LaTeX converter regression tests passed");
 

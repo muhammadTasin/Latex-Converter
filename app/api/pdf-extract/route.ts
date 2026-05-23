@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { maxConvertibleBytes } from "@/lib/latex/converter";
+import { maxConvertibleBytes } from "@/lib/latex/constants";
 import { extractPdfTextFromBytes, hasPdfHeader } from "@/lib/pdf/extract";
 
 export const runtime = "nodejs";
