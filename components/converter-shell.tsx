@@ -620,8 +620,8 @@ export function ConverterShell() {
     <main className="app-shell">
       <header className="topbar">
         <div>
-          <p className="eyebrow">Research LaTeX Studio</p>
-          <h1>Text and image notes to academic LaTeX</h1>
+          <p className="eyebrow">Research LaTeX Studio Beta</p>
+          <h1>High-fidelity LaTeX recovery and conversion for academic documents</h1>
         </div>
         <div className="status-pill" aria-live="polite">
           <Sparkles size={16} />

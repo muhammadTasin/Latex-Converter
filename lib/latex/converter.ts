@@ -257,22 +257,33 @@ export function convertTextToLatex(input: LatexConversionInput): LatexConversion
   const inputType = classification.inputType;
   const metadata = buildMetadata(input, inputType, "converted", sourceBytes, classification);
 
-  if (classification.fileRole === "dependency-library" || classification.fileRole === "bibliography") {
+  if (classification.fileRole === "dependency-library" || classification.fileRole === "bibliography" || classification.fileRole === "documentation-source") {
+    const roleNames: Record<string, string> = {
+      "dependency-library": "Dependency file",
+      "bibliography": "Bibliography file",
+      "documentation-source": "Documentation source"
+    };
+    const roleName = roleNames[classification.fileRole];
+    
     const issue: ValidationIssue = {
       severity: "info",
       message:
-        classification.fileRole === "dependency-library"
-          ? "Dependency file detected. Use with a main .tex document."
-          : "Bibliography file detected. Keep this file beside the main document and cite it from LaTeX.",
+        classification.fileRole === "documentation-source"
+          ? "Documentation source detected. Examples inside may trigger document structure warnings."
+          : classification.fileRole === "dependency-library"
+            ? "Dependency file detected. Use with a main .tex document."
+            : "Bibliography file detected. Keep this file beside the main document and cite it from LaTeX.",
       suggestedFix:
-        classification.fileRole === "dependency-library"
-          ? "Upload the main document with this dependency for project-aware compile validation."
-          : "Upload the main document with this bibliography file for project-aware compile validation."
+        classification.fileRole === "documentation-source"
+          ? "Ensure example environments are supported for accurate environment balancing."
+          : classification.fileRole === "dependency-library"
+            ? "Upload the main document with this dependency for project-aware compile validation."
+            : "Upload the main document with this bibliography file for project-aware compile validation."
     };
     const compileResult =
       conversionMode === "compile-ready"
-        ? skippedCompileResult("Compile-ready document output is disabled for dependency and bibliography files.")
-        : skippedCompileResult("Compile validation is skipped for raw dependency and bibliography files.");
+        ? skippedCompileResult(`Compile-ready document output is disabled for raw ${roleName.toLowerCase()}s.`)
+        : skippedCompileResult(`Compile validation is skipped for raw ${roleName.toLowerCase()}s.`);
     const rawMetadata = {
       ...metadata,
       status: "preserved" as const,
