@@ -1,0 +1,7 @@
+\ProvidesFile{tikzlibraryquantikz2.code.tex}[2026/05/23 test Quantikz library]
+\RequirePackage{tikz}
+\pgfkeys{/quantikz/.is family}
+\NewDocumentEnvironment{quantikz}{O{}}
+  {\begin{tikzpicture}[#1]\matrix[matrix of math nodes]}
+  {;\end{tikzpicture}}
+

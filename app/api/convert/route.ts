@@ -1,19 +1,46 @@
 import { NextResponse } from "next/server";
-import { convertTextToLatex, isSupportedTextFilename, maxConvertibleBytes } from "@/lib/latex/converter";
+import { convertLatexProject, convertTextToLatex, isSupportedTextFilename, maxConvertibleBytes } from "@/lib/latex/converter";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+type ProjectFileRequest = {
+  filename: string;
+  text: string;
+  fileSize?: number;
+};
+
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = (await request.json()) as Record<string, unknown>;
+    const projectFiles = Array.isArray(body.files)
+      ? body.files
+          .filter((file: unknown): file is { filename?: unknown; text?: unknown; fileSize?: unknown } => typeof file === "object" && file !== null)
+          .map(
+            (file): ProjectFileRequest => ({
+              filename: typeof file.filename === "string" ? file.filename : "source.tex",
+              text: typeof file.text === "string" ? file.text : "",
+              fileSize: typeof file.fileSize === "number" && Number.isFinite(file.fileSize) ? file.fileSize : undefined
+            })
+          )
+      : [];
     const text = typeof body.text === "string" ? body.text : "";
     const language = typeof body.language === "string" ? body.language : "en";
     const title = typeof body.title === "string" ? body.title : undefined;
     const author = typeof body.author === "string" ? body.author : undefined;
     const filename = typeof body.filename === "string" ? body.filename : undefined;
     const fileSize = typeof body.fileSize === "number" && Number.isFinite(body.fileSize) ? body.fileSize : undefined;
-    const conversionMode = body.conversionMode === "recover-raw" ? "recover-raw" : "display-source";
+    const conversionMode =
+      body.conversionMode === "recover-raw" || body.conversionMode === "compile-ready" ? body.conversionMode : "display-source";
+
+    if (projectFiles.length) {
+      const oversized = projectFiles.find((file) => (file.fileSize ?? new TextEncoder().encode(file.text).byteLength) > maxConvertibleBytes);
+      const unsupported = projectFiles.find((file) => !isSupportedTextFilename(file.filename));
+      const result = convertLatexProject({ files: projectFiles, language, conversionMode });
+      const status = oversized ? 413 : unsupported ? 415 : result.metadata.status === "failed" ? 422 : 200;
+
+      return NextResponse.json(result, { status });
+    }
 
     const result = convertTextToLatex({ text, language, title, author, filename, fileSize, conversionMode });
     const status =

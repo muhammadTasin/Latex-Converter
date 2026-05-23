@@ -28,7 +28,8 @@ require.extensions[".ts"] = function compileTypeScript(module, filename) {
   module._compile(output, filename);
 };
 
-const { convertTextToLatex, maxConvertibleBytes } = require("../lib/latex/converter.ts");
+const { classifyLatexFile, convertLatexProject, convertTextToLatex, maxConvertibleBytes } = require("../lib/latex/converter.ts");
+const { parseLatexCompileLog } = require("../lib/latex/compile.ts");
 const { extractPdfTextFromBytes } = require("../lib/pdf/extract.ts");
 
 function convert(input) {
@@ -56,6 +57,10 @@ function assertIncludes(value, snippet, label) {
 
 function assertExcludes(value, snippet, label) {
   assert(!value.includes(snippet), `${label}: expected output not to include ${snippet}`);
+}
+
+function hasDisplayDelimiterIssue(result, delimiter) {
+  return result.validationIssues.some((issue) => issue.message.includes(`Unmatched ${delimiter} display math delimiter`));
 }
 
 function maskVerbatimLike(value) {
@@ -136,6 +141,60 @@ assert(count(testD, /\\begin\{cases\}/g) === 1, "Test D: expected one cases envi
 assertExcludes(testD, String.raw`\begin{table}`, "Test D");
 assertExcludes(testD, String.raw`\begin{equation}`, "Test D");
 
+const displayDelimiterValid = convertTextToLatex({
+  text: String.raw`\[
+x + y = z
+\]`,
+  filename: "display-delimiter-valid.tex"
+});
+assert(!hasDisplayDelimiterIssue(displayDelimiterValid, "\\["), "Test D2: valid display math should not report unmatched opener");
+assert(!hasDisplayDelimiterIssue(displayDelimiterValid, "\\]"), "Test D2: valid display math should not report unmatched closer");
+
+const casesRowSpacing = convertTextToLatex({
+  text: String.raw`\[
+\begin{cases}
+a, & \text{if } x > 0, \\[4pt]
+b, & \text{otherwise}
+\end{cases}
+\]`,
+  filename: "cases-row-spacing.tex"
+});
+assertIncludes(casesRowSpacing.latex, String.raw`\\[4pt]`, "Test D3: cases row spacing should be preserved");
+assert(!hasDisplayDelimiterIssue(casesRowSpacing, "\\["), "Test D3: row spacing should not report unmatched display opener");
+assert(!hasDisplayDelimiterIssue(casesRowSpacing, "\\]"), "Test D3: row spacing should not report unmatched display closer");
+
+const alignedRowSpacing = convertTextToLatex({
+  text: String.raw`\[
+\begin{aligned}
+a &= b \\[8pt]
+c &= d \\[4pt]
+d &= e \\*[6pt]
+e &= f \\[-3pt]
+\end{aligned}
+\]`,
+  filename: "aligned-row-spacing.tex"
+});
+assertIncludes(alignedRowSpacing.latex, String.raw`\\[8pt]`, "Test D4: aligned row spacing 8pt should be preserved");
+assertIncludes(alignedRowSpacing.latex, String.raw`\\[4pt]`, "Test D4: aligned row spacing 4pt should be preserved");
+assertIncludes(alignedRowSpacing.latex, String.raw`\\*[6pt]`, "Test D4: aligned starred row spacing should be preserved");
+assertIncludes(alignedRowSpacing.latex, String.raw`\\[-3pt]`, "Test D4: aligned negative row spacing should be preserved");
+assert(!hasDisplayDelimiterIssue(alignedRowSpacing, "\\["), "Test D4: multiple row spacing commands should not report unmatched display opener");
+assert(!hasDisplayDelimiterIssue(alignedRowSpacing, "\\]"), "Test D4: multiple row spacing commands should not report unmatched display closer");
+
+const unmatchedDisplayOpener = convertTextToLatex({
+  text: String.raw`\[
+x + y = z`,
+  filename: "unmatched-display-opener.tex"
+});
+assert(hasDisplayDelimiterIssue(unmatchedDisplayOpener, "\\["), "Test D5: real unmatched display opener should still fail");
+
+const unmatchedDisplayCloser = convertTextToLatex({
+  text: String.raw`x + y = z
+\]`,
+  filename: "unmatched-display-closer.tex"
+});
+assert(hasDisplayDelimiterIssue(unmatchedDisplayCloser, "\\]"), "Test D6: real unmatched display closer should still fail");
+
 const testE = convert(String.raw`\[
 \begin{bmatrix}
 A & B \\
@@ -201,6 +260,88 @@ assert(count(testH, /\\documentclass/g) === 1, "Test H: duplicate documentclass"
 assert(count(testH, /\\begin\{document\}/g) === 1, "Test H: duplicate begin document");
 assert(count(testH, /\\end\{document\}/g) === 1, "Test H: duplicate end document");
 assertExcludes(testH, String.raw`\textbackslash{}section`, "Test H");
+
+const latexDocumentationEnvironments = convertTextToLatex({
+  text: String.raw`\documentclass{article}
+\begin{document}
+\begin{verse}
+|\usepackage{tikz-cd}|
+\end{verse}
+\begin{environment}{tikzcd}
+Documentation for an environment.
+\end{environment}
+\begin{pgfmanualentry}
+Manual entry text.
+\end{pgfmanualentry}
+\begin{codeexample}
+\begin{tikzcd}
+A \arrow[r] & B
+\end{tikzcd}
+\end{codeexample}
+\begin{command}{\arrow}
+Command documentation.
+\end{command}
+\begin{stylekey}{/tikz/commutative diagrams/row sep}
+Style key documentation.
+\end{stylekey}
+\begin{key}{/tikz/commutative diagrams/column sep}
+Key documentation.
+\end{key}
+\begin{plainenvironment}{tikzcd}
+Plain TeX environment docs.
+\end{plainenvironment}
+\begin{contextenvironment}{tikzcd}
+ConTeXt environment docs.
+\end{contextenvironment}
+\begin{shape}
+Shape docs.
+\end{shape}
+\begin{math-function}{Hom}
+Math function documentation.
+\end{math-function}
+\begin{arrowtipsimple}{Rightarrow}
+Arrow tip documentation.
+\end{arrowtipsimple}
+\end{document}`,
+  filename: "latex-documentation-environments.tex"
+});
+assert(latexDocumentationEnvironments.metadata.status !== "failed", "Test H2: known documentation environments should not fail validation");
+assert(!latexDocumentationEnvironments.validationIssues.some((issue) => /not in the converter's known environment list/.test(issue.message)), "Test H2: known documentation environments should not produce unknown-environment info");
+
+const balancedUnknownEnvironment = convertTextToLatex({
+  text: String.raw`\documentclass{article}
+\begin{document}
+\begin{custommanualblock}
+Balanced custom documentation content.
+\end{custommanualblock}
+\end{document}`,
+  filename: "balanced-unknown-environment.tex"
+});
+assert(balancedUnknownEnvironment.metadata.status !== "failed", "Test H3: balanced unknown environments should not fail conversion");
+assert(balancedUnknownEnvironment.validationIssues.some((issue) => issue.severity === "info" && /custommanualblock/.test(issue.message)), "Test H3: balanced unknown environments should remain informational");
+
+const mismatchedUnknownEnvironment = convertTextToLatex({
+  text: String.raw`\documentclass{article}
+\begin{document}
+\begin{customunknown}
+Broken custom documentation content.
+\end{differentname}
+\end{document}`,
+  filename: "mismatched-unknown-environment.tex"
+});
+assert(mismatchedUnknownEnvironment.metadata.status === "failed", "Test H4: mismatched unknown environments should fail conversion");
+assert(mismatchedUnknownEnvironment.validationIssues.some((issue) => issue.severity === "error" && /Unbalanced environment/.test(issue.message)), "Test H4: mismatched unknown environments should produce an unbalanced-environment error");
+
+const unclosedUnknownEnvironment = convertTextToLatex({
+  text: String.raw`\documentclass{article}
+\begin{document}
+\begin{customunknown}
+Unclosed custom documentation content.
+\end{document}`,
+  filename: "unclosed-unknown-environment.tex"
+});
+assert(unclosedUnknownEnvironment.metadata.status === "failed", "Test H5: unclosed unknown environments should fail conversion");
+assert(unclosedUnknownEnvironment.validationIssues.some((issue) => issue.severity === "error" && /(Unbalanced environment|has no matching)/.test(issue.message)), "Test H5: unclosed unknown environments should produce a structural environment error");
 
 const mixedMarkdown = convertTextToLatex({
   text: String.raw`# Research Notes
@@ -942,6 +1083,27 @@ assertIncludes(hardMathSample.latex, "\\ce{2H2 + O2 -> 2H2O}", "Test Z11: chemis
 assertIncludes(hardMathSample.latex, "\\begin{tikzcd}", "Test Z11: diagram should use tikzcd");
 assertExcludes(hardMathSample.latex, "\\begin{itemize}", "Test Z11: minus math lines should not become itemize");
 
+const almostImpossibleRowSpacing = convertTextToLatex({
+  text: String.raw`\[
+\begin{aligned}
+\partial_t u &= \Delta u \\[8pt]
+\nabla u \cdot n &= 0 \\[4pt]
+\end{aligned}
+\]
+
+\[
+\begin{cases}
+u_0, & x \in \Omega, \\[4pt]
+0, & x \notin \Omega.
+\end{cases}
+\]`,
+  filename: "almost-impossible-row-spacing.tex"
+});
+assertIncludes(almostImpossibleRowSpacing.latex, "\\\\[8pt]", "Test Z11b: 8pt row spacing should be preserved");
+assertIncludes(almostImpossibleRowSpacing.latex, "\\\\[4pt]", "Test Z11b: 4pt row spacing should be preserved");
+assert(!hasDisplayDelimiterIssue(almostImpossibleRowSpacing, "\\["), "Test Z11b: row spacing should not create false unmatched display opener errors");
+assert(!hasDisplayDelimiterIssue(almostImpossibleRowSpacing, "\\]"), "Test Z11b: row spacing should not create false unmatched display closer errors");
+
 const fencedLatexCodeExample = convertTextToLatex({
   text: "Here is literal source:\n\n```latex\n\\documentclass{article}\n\\usepackage{amsmath}\n\\begin{document}\nHi\n\\end{document}\n```",
   filename: "fenced-latex-code-example.txt"
@@ -949,6 +1111,84 @@ const fencedLatexCodeExample = convertTextToLatex({
 assert(!fencedLatexCodeExample.validationIssues.some((issue) => /Duplicate \\documentclass|Duplicate \\begin\{document\}|Duplicate \\end\{document\}|Document-level LaTeX command/.test(issue.message)), "Test Z12: fenced LaTeX code should not execute as structure");
 assertIncludes(fencedLatexCodeExample.latex, "\\begin{verbatim}", "Test Z12: fenced LaTeX should become verbatim");
 assert(countRealDocumentclass(fencedLatexCodeExample.latex) === 1, "Test Z12: fenced example should not add a second real documentclass");
+
+const quantikzLibrarySource = fs.readFileSync(path.join("fixtures", "tikzlibraryquantikz2.code.tex"), "utf8");
+const quantikzManualSource = fs.readFileSync(path.join("fixtures", "quantikz_manual_new.tex"), "utf8");
+assert(classifyLatexFile(quantikzLibrarySource, "tikzlibraryquantikz2.code.tex").fileRole === "dependency-library", "Test AA0: classifier should recognize Quantikz library dependency");
+assert(classifyLatexFile(quantikzManualSource, "quantikz_manual_new.tex").fileRole === "full-document", "Test AA0: classifier should recognize Quantikz manual main document");
+
+const quantikzLibrary = convertTextToLatex({
+  text: quantikzLibrarySource,
+  filename: "tikzlibraryquantikz2.code.tex",
+  conversionMode: "display-source"
+});
+assert(quantikzLibrary.metadata.fileRole === "dependency-library", "Test AA1: tikzlibrary*.code.tex should be classified as dependency-library");
+assert(quantikzLibrary.metadata.outputType === "raw-source", "Test AA1: dependency library output should be raw source");
+assert(quantikzLibrary.metadata.status === "preserved", "Test AA1: dependency library should be preserved, not failed");
+assert(quantikzLibrary.latex === quantikzLibrarySource, "Test AA1: dependency library source should be preserved exactly");
+assertExcludes(quantikzLibrary.latex, "\\documentclass", "Test AA1: dependency library should not receive documentclass");
+assertExcludes(quantikzLibrary.latex, "\\maketitle", "Test AA1: dependency library should not receive maketitle");
+assert(quantikzLibrary.validationIssues.some((issue) => /Dependency file detected/.test(issue.message)), "Test AA1: dependency library should explain how to use it");
+
+const quantikzManual = convertTextToLatex({
+  text: quantikzManualSource,
+  filename: "quantikz_manual_new.tex",
+  conversionMode: "recover-raw"
+});
+assert(quantikzManual.metadata.fileRole === "full-document", "Test AA2: quantikz manual should be classified as full-document");
+assert(quantikzManual.metadata.inputType === "latex-document", "Test AA2: quantikz manual should remain a LaTeX document");
+assertIncludes(quantikzManual.latex, "\\documentclass[aps,prx,reprint]{revtex4-2}", "Test AA2: revtex documentclass should be preserved");
+assertIncludes(quantikzManual.latex, "\\usetikzlibrary{quantikz2}", "Test AA2: quantikz tikz library import should be preserved");
+assertIncludes(quantikzManual.latex, "\\newtcblisting{Code}", "Test AA2: custom Code/tcolorbox environment should be preserved");
+assertIncludes(quantikzManual.latex, "\\begin{quantikz}", "Test AA2: quantikz examples should be preserved");
+
+for (const [filename, source, role] of [
+  ["package-test.sty", "\\ProvidesPackage{package-test}\\NewDocumentCommand{\\foo}{}{bar}", "dependency-library"],
+  ["class-test.cls", "\\ProvidesClass{class-test}\\RequirePackage{article}", "dependency-library"],
+  ["biblatex-test.bbx", "\\ProvidesFile{biblatex-test.bbx}\\RequireBibliographyStyle{standard}", "dependency-library"],
+  ["biblatex-test.cbx", "\\ProvidesFile{biblatex-test.cbx}\\RequireCitationStyle{numeric}", "dependency-library"],
+  ["references.bib", "@article{key, title={A Paper}, author={A. Author}, year={2026}}", "bibliography"]
+]) {
+  const result = convertTextToLatex({ text: source, filename, conversionMode: "recover-raw" });
+  assert(result.metadata.fileRole === role, `Test AA3: ${filename} should be classified as ${role}`);
+  assert(result.latex === source, `Test AA3: ${filename} should be preserved as raw source`);
+  assert(result.metadata.status === "preserved", `Test AA3: ${filename} should not fail`);
+}
+
+const fragmentSource = String.raw`\begin{quantikz}
+\lstick{\ket{0}} & \gate{H}
+\end{quantikz}`;
+const rawFragment = convertTextToLatex({ text: fragmentSource, filename: "circuit.tex", conversionMode: "recover-raw" });
+assert(rawFragment.metadata.fileRole === "fragment", "Test AA4: standalone quantikz should be classified as fragment");
+assert(rawFragment.latex === fragmentSource, "Test AA4: recover-raw fragment should preserve exactly");
+const compileReadyFragment = convertTextToLatex({ text: fragmentSource, filename: "circuit.tex", conversionMode: "compile-ready" });
+assertIncludes(compileReadyFragment.latex, "\\documentclass[12pt]{article}", "Test AA4: compile-ready fragment should receive minimal preamble");
+assertIncludes(compileReadyFragment.latex, fragmentSource, "Test AA4: compile-ready fragment should include original fragment body");
+
+const quantikzProject = convertLatexProject({
+  files: [
+    { filename: "quantikz_manual_new.tex", text: quantikzManualSource },
+    { filename: "tikzlibraryquantikz2.code.tex", text: quantikzLibrarySource }
+  ],
+  conversionMode: "compile-ready"
+});
+assert(quantikzProject.metadata.projectRole === "project", "Test AA5: multi-file upload should be marked as project");
+assert(quantikzProject.projectFiles?.some((file) => file.filename === "quantikz_manual_new.tex" && file.projectRole === "main-document"), "Test AA5: project should identify main document");
+assert(quantikzProject.projectFiles?.some((file) => file.filename === "tikzlibraryquantikz2.code.tex" && file.projectRole === "dependency"), "Test AA5: project should identify dependency file");
+assertIncludes(quantikzProject.latex, "\\documentclass[aps,prx,reprint]{revtex4-2}", "Test AA5: project output should preview the main document");
+assertExcludes(quantikzProject.latex, "\\ProvidesFile{tikzlibraryquantikz2.code.tex}", "Test AA5: dependency source should not be merged into main body");
+assert(["success", "failed", "unavailable"].includes(quantikzProject.metadata.compileResult?.status ?? ""), "Test AA5: project should report compile validation state");
+
+const missingQuantikzProject = convertLatexProject({
+  files: [{ filename: "quantikz_manual_new.tex", text: quantikzManualSource }],
+  conversionMode: "compile-ready"
+});
+assert(missingQuantikzProject.metadata.compileResult?.status === "failed", "Test AA6: missing tikz library dependency should be reported as compile failure");
+assert(missingQuantikzProject.metadata.compileResult?.missingFile === "tikzlibraryquantikz2.code.tex", "Test AA6: missing dependency filename should be reported");
+
+const parsedCompileError = parseLatexCompileLog("! LaTeX Error: File `tikzlibraryquantikz2.code.tex' not found.\nl.17 \\\\begin{document}");
+assert(parsedCompileError.missingFile === "tikzlibraryquantikz2.code.tex", "Test AA7: compile log parser should extract missing file");
+assert(parsedCompileError.line === 17, "Test AA7: compile log parser should extract line number");
 
 console.log("LaTeX converter regression tests passed");
 

@@ -11,7 +11,7 @@ type ValidationIssue = {
   suggestedFix?: string;
 };
 
-type ConversionMode = "display-source" | "recover-raw";
+type ConversionMode = "display-source" | "recover-raw" | "compile-ready";
 
 type ConversionMetadata = {
   filename?: string;
@@ -19,12 +19,26 @@ type ConversionMetadata = {
   inputLength: number;
   outputLength: number;
   inputType: "latex-document" | "latex-fragment" | "markdown-latex" | "markdown" | "plain-text";
-  outputType: "latex-document";
+  outputType: "latex-document" | "raw-source" | "latex-fragment" | "bibliography" | "latex-project";
   outputFilename: string;
   outputChecksum: string;
   status: "converted" | "preserved" | "failed";
   largeInput: boolean;
   conversionMode?: ConversionMode;
+  fileRole?: "full-document" | "dependency-library" | "fragment" | "bibliography" | "markdown" | "plain-text" | "ocr-text";
+  projectRole?: "single-file" | "main-document" | "dependency" | "bibliography" | "fragment" | "project";
+  rawSourceConfidence?: number;
+  compileConfidence?: number;
+  visualFidelityConfidence?: number;
+  compileResult?: {
+    status: "success" | "failed" | "unavailable" | "skipped";
+    engine?: string;
+    message: string;
+    firstError?: string;
+    missingFile?: string;
+    line?: number;
+    suggestedFix?: string;
+  };
 };
 
 type ConvertResponse = {
@@ -32,6 +46,13 @@ type ConvertResponse = {
   warnings: string[];
   validationIssues?: ValidationIssue[];
   metadata?: ConversionMetadata;
+  projectFiles?: Array<{
+    filename: string;
+    fileRole: NonNullable<ConversionMetadata["fileRole"]>;
+    projectRole: NonNullable<ConversionMetadata["projectRole"]>;
+    outputFilename: string;
+    status: ConversionMetadata["status"];
+  }>;
   stats?: {
     wordCount: number;
     equationCount: number;
@@ -63,11 +84,12 @@ type PdfExtractResponse = {
 type SourceFile = {
   name: string;
   size: number;
+  text?: string;
 };
 
 const maxTextFileBytes = 2 * 1024 * 1024;
 const outputPreviewCharacters = 120_000;
-const supportedInputExtensions = new Set(["tex", "latex", "txt", "md", "pdf"]);
+const supportedInputExtensions = new Set(["tex", "latex", "txt", "md", "pdf", "sty", "cls", "bbx", "cbx", "bib"]);
 
 const sampleText = `Title: Research-Quality LaTeX Conversion
 Author: Muhammad Tasin
@@ -137,6 +159,7 @@ const initialSampleText = sampleText.trim();
 export function ConverterShell() {
   const [sourceText, setSourceText] = useState("");
   const [sourceFile, setSourceFile] = useState<SourceFile | null>(null);
+  const [sourceFiles, setSourceFiles] = useState<SourceFile[]>([]);
   const [latex, setLatex] = useState("");
   const [language, setLanguage] = useState("en");
   const [conversionMode, setConversionMode] = useState<ConversionMode>("display-source");
@@ -167,6 +190,7 @@ export function ConverterShell() {
   function clearWorkspace() {
     setSourceText("");
     setSourceFile(null);
+    setSourceFiles([]);
     setLatex("");
     setStats(undefined);
     setWarnings([]);
@@ -214,6 +238,49 @@ export function ConverterShell() {
     } catch (error) {
       setStatus("Conversion failed");
       setWarnings([error instanceof Error ? error.message : "Conversion failed."]);
+      setValidationIssues([]);
+    } finally {
+      setIsConverting(false);
+    }
+  }
+
+  async function convertProject(files = sourceFiles) {
+    if (!files.length) {
+      return;
+    }
+
+    setIsConverting(true);
+    setStatus("Converting project");
+    setWarnings([]);
+    setValidationIssues([]);
+
+    try {
+      const response = await fetch("/api/convert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          files: files.map((file) => ({ filename: file.name, text: file.text ?? "", fileSize: file.size })),
+          language,
+          conversionMode
+        })
+      });
+      const data = (await response.json()) as ConvertResponse;
+
+      setLatex(data.latex ?? "");
+      setStats(data.stats);
+      setWarnings(data.warnings ?? []);
+      setValidationIssues(data.validationIssues ?? []);
+      setMetadata(data.metadata);
+
+      if (!response.ok || data.metadata?.status === "failed") {
+        setStatus("Project conversion needs review");
+        return;
+      }
+
+      setStatus(data.metadata?.compileResult?.status === "success" ? "Project converted and compiled" : "Project converted");
+    } catch (error) {
+      setStatus("Project conversion failed");
+      setWarnings([error instanceof Error ? error.message : "Project conversion failed."]);
       setValidationIssues([]);
     } finally {
       setIsConverting(false);
@@ -289,6 +356,56 @@ export function ConverterShell() {
     await convertText(fileText, fileInfo);
   }
 
+  async function loadTextFiles(fileList: FileList | null) {
+    const files = Array.from(fileList ?? []);
+    if (!files.length) {
+      return;
+    }
+
+    if (files.length === 1) {
+      await loadTextFile(files[0]);
+      return;
+    }
+
+    setStatus("Reading project files");
+    setWarnings([]);
+    setValidationIssues([]);
+    setMetadata(undefined);
+    setLatex("");
+
+    const unsupported = files.find((file) => !supportedInputExtensions.has(getExtension(file.name)) || getExtension(file.name) === "pdf");
+    if (unsupported) {
+      const issue: ValidationIssue = {
+        severity: "error",
+        message: `Unsupported project file "${unsupported.name}".`,
+        suggestedFix: "Project uploads support .tex, .latex, .sty, .cls, .bbx, .cbx, .bib, .txt, and .md. Convert PDFs one at a time first."
+      };
+      setStatus("Unsupported project file");
+      setWarnings([issue.message]);
+      setValidationIssues([issue]);
+      return;
+    }
+
+    const oversized = files.find((file) => file.size > maxTextFileBytes);
+    if (oversized) {
+      const issue: ValidationIssue = {
+        severity: "error",
+        message: `${oversized.name} is ${formatBytes(oversized.size)}, which exceeds the ${formatBytes(maxTextFileBytes)} limit.`,
+        suggestedFix: "Split the project or remove generated artifacts before upload."
+      };
+      setStatus("File too large");
+      setWarnings([issue.message]);
+      setValidationIssues([issue]);
+      return;
+    }
+
+    const loadedFiles = await Promise.all(files.map(async (file) => ({ name: file.name, size: file.size, text: await file.text() })));
+    setSourceFiles(loadedFiles);
+    setSourceFile({ name: `${loadedFiles.length} project files`, size: loadedFiles.reduce((total, file) => total + file.size, 0) });
+    setSourceText(loadedFiles.map((file) => `% ===== ${file.name} =====\n${file.text}`).join("\n\n"));
+    await convertProject(loadedFiles);
+  }
+
   async function extractPdfFile(file: File) {
     setStatus("Extracting PDF text");
 
@@ -358,6 +475,7 @@ export function ConverterShell() {
   function handleSourceChange(value: string) {
     setSourceText(value);
     setSourceFile(null);
+    setSourceFiles([]);
     setLatex("");
     setStats(undefined);
     setStatus("Ready");
@@ -470,6 +588,12 @@ export function ConverterShell() {
       outputType: metadata?.outputType ?? "latex-document",
       outputFilename,
       conversionMode: metadata?.conversionMode ?? conversionMode,
+      fileRole: metadata?.fileRole ?? "plain-text",
+      projectRole: metadata?.projectRole ?? "single-file",
+      rawSourceConfidence: formatConfidence(metadata?.rawSourceConfidence),
+      compileConfidence: formatConfidence(metadata?.compileConfidence),
+      visualFidelityConfidence: formatConfidence(metadata?.visualFidelityConfidence),
+      compileResult: metadata?.compileResult,
       warnings,
       validationIssues
     });
@@ -554,13 +678,29 @@ export function ConverterShell() {
                 <ScanText size={14} />
                 Recover Raw LaTeX
               </button>
+              <button
+                type="button"
+                className={conversionMode === "compile-ready" ? "mode-option active" : "mode-option"}
+                onClick={() => setConversionMode("compile-ready")}
+                aria-pressed={conversionMode === "compile-ready"}
+                title="Preserve full documents and wrap fragments for compile validation when a compiler is available"
+              >
+                <Sparkles size={14} />
+                Compile-ready
+              </button>
             </div>
           </fieldset>
 
           <label className="text-upload-zone">
-            <input key={`source-${resetKey}`} type="file" accept=".tex,.latex,.txt,.md,.pdf,text/plain,text/markdown,application/pdf" onChange={(event) => loadTextFile(event.target.files?.[0] ?? null)} />
+            <input
+              key={`source-${resetKey}`}
+              type="file"
+              multiple
+              accept=".tex,.latex,.sty,.cls,.bbx,.cbx,.bib,.txt,.md,.pdf,text/plain,text/markdown,application/pdf"
+              onChange={(event) => loadTextFiles(event.target.files)}
+            />
             <FileUp size={22} />
-            <span>{sourceFile ? sourceFile.name : "Upload .tex, .latex, .txt, .md, or PDF (max 2MB)"}</span>
+            <span>{sourceFile ? sourceFile.name : "Upload .tex project files, .txt, .md, or PDF (max 2MB each)"}</span>
           </label>
 
           <div className="notice neutral" style={{ marginTop: "4px", marginBottom: "4px" }}>
@@ -578,7 +718,7 @@ export function ConverterShell() {
             placeholder="Paste research notes here or upload a .tex, .txt, .md, or PDF file (under 2MB for maximum accuracy)."
           />
 
-          <button className="primary-action" onClick={() => convertText()} disabled={isConverting}>
+          <button className="primary-action" onClick={() => (sourceFiles.length > 1 ? convertProject() : convertText())} disabled={isConverting}>
             {isConverting ? <Loader2 className="spin" size={18} /> : <FileText size={18} />}
             Convert to LaTeX
           </button>
@@ -628,6 +768,20 @@ export function ConverterShell() {
                   <p key={warning}>{warning}</p>
                 ))}
               </div>
+            </div>
+          ) : null}
+
+          {metadata?.fileRole === "dependency-library" ? (
+            <div className="notice neutral">
+              <Info size={18} />
+              Dependency file detected. Use with a main .tex document.
+            </div>
+          ) : null}
+
+          {metadata?.compileResult ? (
+            <div className={metadata.compileResult.status === "failed" ? "notice warning" : "notice neutral"}>
+              <Info size={18} />
+              {metadata.compileResult.message}
             </div>
           ) : null}
 
@@ -718,6 +872,10 @@ function MetadataPanel({ metadata, sourceFile, sourceText }: { metadata?: Conver
       <MetaItem label="Checksum" value={metadata?.outputChecksum ?? "00000000"} />
       <MetaItem label="Status" value={metadata?.status ?? "ready"} />
       <MetaItem label="Type" value={metadata?.outputType ?? "latex-document"} />
+      <MetaItem label="Role" value={metadata?.fileRole ?? "pending"} />
+      <MetaItem label="Project" value={metadata?.projectRole ?? "single-file"} />
+      <MetaItem label="Raw confidence" value={formatConfidence(metadata?.rawSourceConfidence)} />
+      <MetaItem label="Compile" value={metadata?.compileResult?.status ?? "not run"} />
     </div>
   );
 }
@@ -753,6 +911,14 @@ function formatBytes(bytes: number) {
   return `${(kilobytes / 1024).toFixed(2)} MB`;
 }
 
+function formatConfidence(value?: number) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return "pending";
+  }
+
+  return `${Math.round(value * 100)}%`;
+}
+
 function formatIssue(issue: ValidationIssue) {
   const line = issue.line ? `line ${issue.line}: ` : "";
   const fix = issue.suggestedFix ? ` Fix: ${issue.suggestedFix}` : "";
@@ -774,6 +940,12 @@ function buildConversionLog({
   outputType,
   outputFilename,
   conversionMode,
+  fileRole,
+  projectRole,
+  rawSourceConfidence,
+  compileConfidence,
+  visualFidelityConfidence,
+  compileResult,
   warnings,
   validationIssues
 }: {
@@ -787,6 +959,12 @@ function buildConversionLog({
   outputType: string;
   outputFilename: string;
   conversionMode: string;
+  fileRole: string;
+  projectRole: string;
+  rawSourceConfidence: string;
+  compileConfidence: string;
+  visualFidelityConfidence: string;
+  compileResult?: ConversionMetadata["compileResult"];
   warnings: string[];
   validationIssues: ValidationIssue[];
 }) {
@@ -803,6 +981,15 @@ function buildConversionLog({
     `Output type: ${outputType}`,
     `Output file: ${outputFilename}`,
     `Conversion mode: ${conversionMode}`,
+    `File role: ${fileRole}`,
+    `Project role: ${projectRole}`,
+    `Raw source confidence: ${rawSourceConfidence}`,
+    `Compile confidence: ${compileConfidence}`,
+    `Visual fidelity confidence: ${visualFidelityConfidence}`,
+    `Compile status: ${compileResult?.status ?? "not run"}`,
+    `Compile message: ${compileResult?.message ?? "No compile validation was run."}`,
+    ...(compileResult?.firstError ? [`Compile error: ${compileResult.firstError}`] : []),
+    ...(compileResult?.missingFile ? [`Missing file: ${compileResult.missingFile}`] : []),
     "",
     "Warnings:",
     ...(warnings.length ? warnings.map((warning) => `- ${warning}`) : ["- None"]),
@@ -835,7 +1022,7 @@ function getUnsupportedFileIssue(filename: string): ValidationIssue {
   return {
     severity: "error",
     message: `Unsupported file type for "${filename}".`,
-    suggestedFix: "Choose a .tex, .latex, .txt, or .md file."
+    suggestedFix: "Choose a .tex, .latex, .sty, .cls, .bbx, .cbx, .bib, .txt, or .md file."
   };
 }
 
