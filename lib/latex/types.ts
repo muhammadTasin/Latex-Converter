@@ -83,6 +83,7 @@ export type ConversionMetadata = {
   compileConfidence?: number;
   visualFidelityConfidence?: number;
   compileResult?: CompileResult;
+  classificationReason?: string;
 };
 
 export type LatexConversionResult = {

@@ -74,6 +74,7 @@ type LatexFileClassification = {
   rawSourceConfidence: number;
   compileConfidence: number;
   visualFidelityConfidence: number;
+  classificationReason: string;
 };
 
 type SectionHeading =
@@ -295,6 +296,7 @@ export function convertTextToLatex(input: LatexConversionInput): LatexConversion
       const validationIssues = validateLatex(latex, {
         latexMode: true,
         inputType: "latex-document",
+        fileRole: "full-document",
         inputLength: recoveredDocument.length,
         sourceText: recoveredDocument
       });
@@ -306,7 +308,13 @@ export function convertTextToLatex(input: LatexConversionInput): LatexConversion
         latex,
         warnings: [...recoverWarnings, ...issuesToWarnings(validationIssues)],
         validationIssues,
-        metadata: finalizeMetadata({ ...metadata, inputType: "latex-document", status: "preserved" }, latex, validationIssues),
+        metadata: finalizeMetadata({ 
+          ...metadata, 
+          inputType: "latex-document", 
+          fileRole: "full-document",
+          projectRole: "main-document",
+          status: "preserved" 
+        }, latex, validationIssues),
         stats: buildLatexStats(recoveredDocument, latex, [])
       };
     }
@@ -351,7 +359,13 @@ export function convertTextToLatex(input: LatexConversionInput): LatexConversion
 
   if (inputType === "latex-document" || inputType === "latex-fragment") {
     const latex = isRawMode ? sourceText : preserveLatexSource(preparedText, input, language.code);
-    const validationIssues = validateLatex(latex, { latexMode: true, inputType, inputLength: sourceBytes, sourceText: sourceText });
+    const validationIssues = validateLatex(latex, { 
+        latexMode: true, 
+        inputType, 
+        fileRole: classification.fileRole,
+        inputLength: sourceBytes, 
+        sourceText: sourceText 
+    });
     const compileResult =
       conversionMode === "compile-ready"
         ? validateLatexCompileProject([{ filename: input.filename ?? "main.tex", text: latex, fileSize: sourceBytes }], input.filename ?? "main.tex")
@@ -391,6 +405,7 @@ export function convertTextToLatex(input: LatexConversionInput): LatexConversion
   const validationIssues = validateLatex(latex, {
     latexMode: inputType !== "plain-text",
     inputType,
+    fileRole: metadata.fileRole,
     inputLength: preparedText.length,
     sourceText: preparedText
   });
@@ -544,33 +559,38 @@ function containsLatexDocumentMarkers(text: string): boolean {
 function isLatexDocumentAtMeaningfulStart(text: string): boolean {
   // We allow comments, blank lines, and setup commands/primitives before \documentclass.
   const cleaned = text.replace(/^\uFEFF/, "");
-  const docClassMatch = /\\documentclass(?:\[[^\]]*\])?\{[^}]+\}/.exec(cleaned);
+  // Use a more robust regex that ignores comments for finding \documentclass
+  const uncommentedText = stripLatexCommentsPreservingLines(cleaned);
+  const docClassMatch = /\\documentclass(?:\[[^\]]*\])?\{[^}]+\}/.exec(uncommentedText);
 
-  if (!docClassMatch || !/\\begin\{document\}/.test(cleaned)) return false;
+  if (!docClassMatch || !/\\begin\{document\}/.test(uncommentedText)) return false;
 
-  const docClassIndex = cleaned.indexOf(docClassMatch[0]);
+  const docClassIndex = uncommentedText.indexOf(docClassMatch[0]);
   const leadingText = cleaned.slice(0, docClassIndex);
 
   if (leadingText.trim().length === 0) return true;
 
-  const lines = leadingText.split("\n");
-  const setupCommandPattern = /^\\(?:pdfoutput|PassOptionsToPackage|RequirePackage|providecommand|newcommand|def|let|makeatletter|makeatother|if[a-zA-Z]+|else|fi|usepackage|input|include|title|author|date|catcode|count|dimen|skip|toks|box|setbox|wd|ht|dp|hss|vss|hfil|vfil|hskip|vskip|hbox|vbox|vtop|message|errmessage|show|showthe|special|hyphenation|penalty|lowercase|uppercase|mathcode|delcode)\b/;
+  // Remove known safe preamble environments like filecontents
+  let preambleText = leadingText;
+  const envPattern = /\\begin\{(filecontents\*?|minipage|center)\}[\s\S]*?\\end\{\1\}/g;
+  preambleText = preambleText.replace(envPattern, "");
+
+  const lines = preambleText.split("\n");
+  const setupCommandPattern = /^\\(?:pdfoutput|PassOptionsToPackage|RequirePackage|providecommand|newcommand|def|let|makeatletter|makeatother|if[a-zA-Z]+|else|fi|usepackage|input|include|title|author|date|catcode|count|dimen|skip|toks|box|setbox|wd|ht|dp|hss|vss|hfil|vfil|hskip|vskip|hbox|vbox|vtop|message|errmessage|show|showthe|special|hyphenation|penalty|lowercase|uppercase|mathcode|delcode|chardef|mathchardef|newcount|newdimen|newskip|newmuskip|newbox|newtoks|newhelp|newread|newwrite|newfam|newlanguage|tracing[a-z]+|relax)\b/;
 
   for (const line of lines) {
     const trimmed = line.trim();
     if (trimmed === "" || trimmed.startsWith("%")) continue;
     
-    // Check if the line starts with a known setup command or primitive.
-    // Also allow multiple commands on one line if they all match.
-    const commands = trimmed.match(/\\[a-zA-Z]+/g);
-    if (!commands) return false;
-    
-    if (trimmed.startsWith("\\") && setupCommandPattern.test(trimmed)) {
-       // Check if there is any non-LaTeX prose in the rest of the line.
-       // This is a heuristic: if it has many spaces and long words, it's prose.
-       const proseText = trimmed.replace(/\\[a-zA-Z]+(?:\[[^\]]*\])?(?:\{[^{}]*\})*/g, "").trim();
-       if (proseText.length > 20 && proseText.includes(" ")) return false;
-       continue;
+    // Allow research metadata labels
+    if (/^(Title|Author|Institution|Date|Keywords|Abstract)\s*:/i.test(trimmed)) continue;
+
+    if (trimmed.startsWith("\\")) {
+       if (setupCommandPattern.test(trimmed)) {
+         const proseText = trimmed.replace(/\\[a-zA-Z]+(?:\[[^\]]*\])?(?:\{[^{}]*\})*/g, "").trim();
+         if (proseText.length > 40 && proseText.includes(" ")) return false;
+         continue;
+       }
     }
     
     return false;
@@ -1259,7 +1279,8 @@ function buildMetadata(
     projectRole: classification?.projectRole ?? "single-file",
     rawSourceConfidence: classification?.rawSourceConfidence ?? 0.35,
     compileConfidence: classification?.compileConfidence ?? 0,
-    visualFidelityConfidence: classification?.visualFidelityConfidence ?? 0
+    visualFidelityConfidence: classification?.visualFidelityConfidence ?? 0,
+    classificationReason: classification?.classificationReason
   };
 }
 
@@ -1383,7 +1404,7 @@ function detectInputType(text: string, filename?: string): DetectedInputType {
     return "plain-text";
   }
 
-  const latex = isLatexSource(text);
+  const latex = isLatexSource(text) || extension === "tex";
   const markdown = hasMarkdownStructure(text) || extension === "md";
 
   if (latex && markdown) {
@@ -1403,39 +1424,56 @@ function detectInputType(text: string, filename?: string): DetectedInputType {
 
 export function classifyLatexFile(text: string, filename?: string, sourceKind?: LatexConversionInput["sourceKind"]): LatexFileClassification {
   if (sourceKind === "ocr") {
-    return classification("ocr-text", "plain-text", "latex-document", "single-file", 0.45, 0, 0.25);
+    return classification("ocr-text", "plain-text", "latex-document", "single-file", 0.45, 0, 0.25, "OCR source kind detected.");
   }
 
   const extension = getFileExtension(filename);
   const safeFilename = sanitizeOutputFilename(filename ?? "").toLowerCase();
 
+  // Priority 1: Sacred Extensions (.bib, .sty, .cls, .bbx, .cbx)
+  if (extension === "bib") {
+    return classification("bibliography", "plain-text", "bibliography", "bibliography", 0.98, 0, 0.95, "Bibliography detected from .bib extension.");
+  }
+  if (["sty", "cls", "bbx", "cbx"].includes(extension) || /^tikzlibrary.+\.code\.tex$/i.test(safeFilename)) {
+    const reason = /^tikzlibrary.+\.code\.tex$/i.test(safeFilename) 
+      ? "TikZ library detected from filename." 
+      : `Dependency file detected from .${extension} extension.`;
+    return classification("dependency-library", "latex-fragment", "raw-source", "dependency", 0.98, 0, 0.95, reason);
+  }
+
+  // Priority 2: Full Document (requires active, uncommented \documentclass and \begin{document})
+  if (isLatexDocumentAtMeaningfulStart(text)) {
+    return classification("full-document", "latex-document", "latex-document", "main-document", 0.98, 0.7, 0.85, "Full document detected from active \\documentclass and \\begin{document}.");
+  }
+
+  // Priority 3: Content-based Bibliography/Dependency
   if (isBibliographySource(text, extension)) {
-    return classification("bibliography", "plain-text", "bibliography", "bibliography", 0.98, 0, 0.95);
+    return classification("bibliography", "plain-text", "bibliography", "bibliography", 0.98, 0, 0.95, "Bibliography detected from BibTeX entry structure.");
   }
 
   if (isDependencyLibrarySource(text, filename)) {
-    return classification("dependency-library", "latex-fragment", "raw-source", "dependency", 0.98, 0, 0.95);
-  }
-
-  if (isLatexDocumentAtMeaningfulStart(text)) {
-    return classification("full-document", "latex-document", "latex-document", "main-document", 0.98, 0.7, 0.85);
+    return classification("dependency-library", "latex-fragment", "raw-source", "dependency", 0.98, 0, 0.95, "Dependency file detected from specific LaTeX preamble commands.");
   }
 
   const inputType = detectInputType(text, filename);
 
+  // Priority 4: Fragments
   if (inputType === "latex-fragment") {
-    return classification("fragment", "latex-fragment", "latex-document", "fragment", 0.8, 0.55, 0.65);
+    return classification("fragment", "latex-fragment", "latex-document", "fragment", 0.8, 0.55, 0.65, "Fragment detected from presence of LaTeX commands or environments without full document structure.");
   }
 
   if (inputType === "markdown" || inputType === "markdown-latex" || extension === "md") {
-    return classification("markdown", inputType, "latex-document", "single-file", 0.55, 0.3, 0.35);
+    const reason = inputType === "markdown-latex" ? "Mixed Markdown and LaTeX detected." : "Markdown structure detected.";
+    return classification("markdown", inputType, "latex-document", "single-file", 0.55, 0.3, 0.35, reason);
   }
 
-  if (/\.tex$/i.test(safeFilename) && isLatexSource(text)) {
-    return classification("fragment", "latex-fragment", "latex-document", "fragment", 0.75, 0.45, 0.6);
+  if (/\.tex$/i.test(safeFilename)) {
+    return classification("fragment", "latex-fragment", "latex-document", "fragment", 0.75, 0.45, 0.6, ".tex extension found.");
   }
 
-  return classification("plain-text", inputType, "latex-document", "single-file", sourceKind === "pdf" ? 0.4 : 0.55, 0.25, sourceKind === "pdf" ? 0.25 : 0.35);
+  // Priority 5: Markdown/Plain-text
+  const reason = sourceKind === "pdf" ? "Plain text extracted from PDF." : "No significant LaTeX markers found; treating as plain text.";
+  return classification("plain-text", inputType, "latex-document", "single-file", sourceKind === "pdf" ? 0.4 : 0.55, 0.25, sourceKind === "pdf" ? 0.25 : 0.35, reason);
 }
 
 function classification(
@@ -1445,13 +1483,16 @@ function classification(
   projectRole: LatexProjectRole,
   rawSourceConfidence: number,
   compileConfidence: number,
-  visualFidelityConfidence: number
+  visualFidelityConfidence: number,
+  classificationReason: string
 ): LatexFileClassification {
-  return { fileRole, inputType, outputType, projectRole, rawSourceConfidence, compileConfidence, visualFidelityConfidence };
+  return { fileRole, inputType, outputType, projectRole, rawSourceConfidence, compileConfidence, visualFidelityConfidence, classificationReason };
 }
 
 function isBibliographySource(text: string, extension: string): boolean {
-  return extension === "bib" || /^\s*@(?:article|book|inproceedings|proceedings|misc|phdthesis|mastersthesis|techreport|unpublished)\s*\{/im.test(text);
+  if (extension === "bib") return true;
+  const bibPattern = /^\s*@(?:article|book|inproceedings|proceedings|misc|software|dataset|phdthesis|mastersthesis|techreport|unpublished)\s*\{/im;
+  return bibPattern.test(text);
 }
 
 function isDependencyLibrarySource(text: string, filename?: string): boolean {
@@ -1463,7 +1504,9 @@ function isDependencyLibrarySource(text: string, filename?: string): boolean {
     /\\(?:ProvidesPackage|ProvidesClass|RequirePackage|pgfkeys|pgfdeclarelayer|NewDocumentCommand|NewDocumentEnvironment|DeclareMathOperator)\b/.test(text) ||
     /\\(?:pgfqkeys|tikzcdset|tikzset|pgfutil@package|input pgf)/.test(text);
 
-  return (dependencyFilename || dependencyMarkers) && !/\\begin\{document\}/.test(text);
+  // A dependency file should NOT have \begin{document} unless it is commented or in a verbatim block
+  const cleaned = stripLatexCommentsPreservingLines(text);
+  return (dependencyFilename || dependencyMarkers) && !/\\begin\{document\}/.test(cleaned);
 }
 
 function findMissingProjectDependencies(mainText: string, filenames: string[]): string[] {
@@ -3253,9 +3296,32 @@ const knownLatexEnvironments = new Set([
 
 function validateLatex(
   latex: string,
-  options: { latexMode: boolean; inputType?: DetectedInputType; inputLength?: number; sourceText?: string }
+  options: { 
+    latexMode: boolean; 
+    inputType?: DetectedInputType; 
+    fileRole?: LatexFileRole;
+    inputLength?: number; 
+    sourceText?: string 
+  }
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
+  const fileRole = options.fileRole ?? "full-document";
+
+  if (fileRole === "bibliography" || fileRole === "plain-text" || fileRole === "markdown") {
+    // Basic bibtex validation if it's bibliography
+    if (fileRole === "bibliography") {
+       const entries = latex.match(/@(?:article|book|inproceedings|proceedings|misc|phdthesis|mastersthesis|techreport|unpublished)\s*\{/im);
+       if (!entries && latex.trim().length > 100) {
+         issues.push({
+           severity: "warning",
+           message: "Bibliography file detected but no standard BibTeX entries found.",
+           suggestedFix: "Ensure entries follow the @type{citekey, ...} format."
+         });
+       }
+    }
+    return issues;
+  }
+
   const lineAt = createLineNumberLookup(latex);
   const knownEnvironments = getKnownEnvironmentsForDocument(latex);
   const checkedLatex = maskVerbatimLikeBlocks(stripLatexCommentsPreservingLines(latex), knownEnvironments);
@@ -3270,60 +3336,63 @@ function validateLatex(
     });
   }
 
-  addDuplicateIssue(
-    issues,
-    checkedLatex,
-    /\\documentclass(?:\[[^\]]*\])?\{[^}]+\}/g,
-    "Duplicate \\documentclass declarations were detected.",
-    "Keep exactly one \\documentclass declaration.",
-    lineAt
-  );
-  addDuplicateIssue(
-    issues,
-    checkedLatex,
-    /\\begin\{document\}/g,
-    "Duplicate \\begin{document} blocks were detected.",
-    "Keep exactly one document body start.",
-    lineAt
-  );
-  addDuplicateIssue(
-    issues,
-    checkedLatex,
-    /\\end\{document\}/g,
-    "Duplicate \\end{document} blocks were detected.",
-    "Keep exactly one document body end.",
-    lineAt
-  );
+  const isFullDoc = fileRole === "full-document";
+  const isDep = fileRole === "dependency-library";
 
-  const isFragment = options.inputType === "latex-fragment";
+  if (isFullDoc) {
+    addDuplicateIssue(
+      issues,
+      checkedLatex,
+      /\\documentclass(?:\[[^\]]*\])?\{[^}]+\}/g,
+      "Duplicate \\documentclass declarations were detected.",
+      "Keep exactly one \\documentclass declaration.",
+      lineAt
+    );
+    addDuplicateIssue(
+      issues,
+      checkedLatex,
+      /\\begin\{document\}/g,
+      "Duplicate \\begin{document} blocks were detected.",
+      "Keep exactly one document body start.",
+      lineAt
+    );
+    addDuplicateIssue(
+      issues,
+      checkedLatex,
+      /\\end\{document\}/g,
+      "Duplicate \\end{document} blocks were detected.",
+      "Keep exactly one document body end.",
+      lineAt
+    );
 
-  if (!isFragment && !/\\begin\{document\}/.test(checkedLatex)) {
-    issues.push({
-      severity: "error",
-      message: "Missing real \\begin{document} in generated LaTeX output.",
-      suggestedFix: "Regenerate the document wrapper or restore the document body start outside verbatim/code text."
-    });
-  }
+    if (!/\\begin\{document\}/.test(checkedLatex)) {
+      issues.push({
+        severity: "error",
+        message: "Missing real \\begin{document} in generated LaTeX output.",
+        suggestedFix: "Regenerate the document wrapper or restore the document body start outside verbatim/code text."
+      });
+    }
 
-  if (!isFragment && !/\\end\{document\}/.test(checkedLatex)) {
-    issues.push({
-      severity: "error",
-      message: "Missing \\end{document} in full LaTeX document output.",
-      suggestedFix: "Restore the closing document delimiter before downloading or compiling."
-    });
-  }
+    if (!/\\end\{document\}/.test(checkedLatex)) {
+      issues.push({
+        severity: "error",
+        message: "Missing \\end{document} in full LaTeX document output.",
+        suggestedFix: "Restore the closing document delimiter before downloading or compiling."
+      });
+    }
 
-  if (!isFragment && (options.inputType === "latex-document" || isFullLatexDocument(latex)) && !/\\end\{document\}\s*$/.test(checkedLatex)) {
-    issues.push({
-      severity: "error",
-      message: "Output does not end with \\end{document}.",
-      suggestedFix: "Check for truncated output or content appended after the document terminator."
-    });
-  }
+    if (!/\\end\{document\}\s*$/.test(checkedLatex)) {
+      issues.push({
+        severity: "error",
+        message: "Output does not end with \\end{document}.",
+        suggestedFix: "Check for truncated output or content appended after the document terminator."
+      });
+    }
 
-  const bodyCommandIssue = findDocumentLevelCommandInBodyIssue(checkedLatex, lineAt);
-  if (bodyCommandIssue) {
-    issues.push(bodyCommandIssue);
+    const bodyCommandIssue = findDocumentLevelCommandInBodyIssue(checkedLatex, lineAt);
+    if (bodyCommandIssue) {
+      issues.push(bodyCommandIssue);
+    }
   }
 
   const rawFence = /```/.exec(checkedLatex);
@@ -3344,7 +3413,7 @@ function validateLatex(
     });
   }
 
-  if (options.latexMode) {
+  if (options.latexMode && !isDep) {
     const escapedCommand = /\\textbackslash\{\}(?:documentclass|usepackage|begin|end|section|subsection|subsubsection|paragraph|title|author|date|maketitle|tableofcontents|begin\{)/.exec(
       checkedLatex
     );
@@ -3385,9 +3454,11 @@ function validateLatex(
     issues.push(rawPdfIssue);
   }
 
-  const unconvertedLabelIssue = findUnconvertedStructuredLabelIssue(latex, options.inputType, lineAt);
-  if (unconvertedLabelIssue) {
-    issues.push(unconvertedLabelIssue);
+  if (isFullDoc || fileRole === "fragment") {
+    const unconvertedLabelIssue = findUnconvertedStructuredLabelIssue(latex, options.inputType, lineAt);
+    if (unconvertedLabelIssue) {
+      issues.push(unconvertedLabelIssue);
+    }
   }
 
   issues.push(...findBrokenFracIssues(checkedLatex, lineAt));

@@ -2,14 +2,14 @@
 
 ## Scores
 - Project Handling: 100.00%
-- Full-Document Classification: 81.82%
+- Full-Document Classification: 100.00%
 - Dependency-Library Accuracy: 100.00%
 - Bibliography Accuracy: 100.00%
 - Fragment Classification: 100.00%
-- Fragment Validation: 92.20%
-- Raw Preservation: 99.33%
+- Fragment Validation: 96.50%
+- Raw Preservation: 99.38%
 - Compile/Status Accuracy: 85.00%
-- **Overall Aggressive Benchmark Accuracy: 94.79%**
+- **Overall Aggressive Benchmark Accuracy: 97.61%**
 
 ## Project Summary
 | Project | Files | Status | Compile | Warnings | Issues |
@@ -21,7 +21,7 @@
 | arXiv-1809.03842v8 | 2 | compile-failed | failed | 3 | 1 |
 | arXiv-2005.14165v4 | 97 | preserved | unavailable | 3 | 0 |
 | arXiv-2310.00367v2 | 39 | compile-failed | failed | 6 | 1 |
-| completeness_validator_fix_bundle | 2 | failed | unavailable | 5 | 3 |
+| completeness_validator_fix_bundle | 2 | converted | unavailable | 2 | 0 |
 | latex-converter-final-all-phases-fix | 2 | converted | unavailable | 2 | 0 |
 | pdf_quality_modes_fix_bundle | 1 | converted | unavailable | 2 | 0 |
 
@@ -50,10 +50,7 @@
 | quantikz_manual_new.tex | arXiv-1809.03842v8 | main-document | preserved | true | 82709 | 82709 |
 
 ## Top Bugs
-1. **converter bug**: Conversion failed in `completeness_validator_fix_bundle/completeness_validator_fix_bundle\README_FIX.md`
-2. **classifier bug**: Missed full document in `completeness_validator_fix_bundle/completeness_validator_fix_bundle\scripts\fixtures\hard_research_mixture_input.txt`
-3. **converter bug**: Lost environments: tabular, table, align, equation, cases in `completeness_validator_fix_bundle/completeness_validator_fix_bundle\scripts\fixtures\hard_research_mixture_input.txt`
-4. **classifier bug**: Missed full document in `standalone/latex_stress_test_worlds_hardest.tex`
+1. **converter bug**: Lost environments: tabular, table, align, equation, cases. Reason: No significant LaTeX markers found; treating as plain text. in `completeness_validator_fix_bundle/completeness_validator_fix_bundle\scripts\fixtures\hard_research_mixture_input.txt`
 
 ## Errors During Benchmark
 

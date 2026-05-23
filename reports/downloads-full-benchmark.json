@@ -66,10 +66,10 @@
     {
       "name": "completeness_validator_fix_bundle",
       "fileCount": 2,
-      "status": "failed",
+      "status": "converted",
       "compileStatus": "unavailable",
-      "warnings": 5,
-      "issues": 3,
+      "warnings": 2,
+      "issues": 0,
       "mainFile": "completeness_validator_fix_bundle\\README_FIX.md"
     },
     {
@@ -96,6 +96,7 @@
       "filename": "fancyhdr.sty",
       "project": "arXiv-1409.0473v7",
       "role": "dependency",
+      "fileRole": "dependency-library",
       "status": "preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -105,6 +106,7 @@
       "warnings": 1,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Dependency file detected from .sty extension.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -112,6 +114,7 @@
       "filename": "iclr2015.sty",
       "project": "arXiv-1409.0473v7",
       "role": "dependency",
+      "fileRole": "dependency-library",
       "status": "preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -121,6 +124,7 @@
       "warnings": 1,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Dependency file detected from .sty extension.",
       "environmentsFound": [
         "tabular"
       ],
@@ -132,6 +136,7 @@
       "filename": "main.tex",
       "project": "arXiv-1409.0473v7",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -141,6 +146,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "wrapfigure",
         "tabular",
@@ -160,6 +166,7 @@
       "filename": "search.tex",
       "project": "arXiv-1409.0473v7",
       "role": "main-document",
+      "fileRole": "full-document",
       "status": "preserved",
       "checksumMatch": true,
       "hasFullDoc": true,
@@ -169,6 +176,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Full document detected from active \\documentclass and \\begin{document}.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -176,6 +184,7 @@
       "filename": "supp.tex",
       "project": "arXiv-1409.0473v7",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -185,6 +194,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tabular",
         "table",
@@ -202,6 +212,7 @@
       "filename": "background.tex",
       "project": "arXiv-1706.03762v7",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -211,6 +222,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tabular",
         "table"
@@ -224,6 +236,7 @@
       "filename": "introduction.tex",
       "project": "arXiv-1706.03762v7",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -233,6 +246,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -240,6 +254,7 @@
       "filename": "model_architecture.tex",
       "project": "arXiv-1706.03762v7",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -249,6 +264,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure",
         "equation"
@@ -262,6 +278,7 @@
       "filename": "ms.tex",
       "project": "arXiv-1706.03762v7",
       "role": "main-document",
+      "fileRole": "full-document",
       "status": "preserved",
       "checksumMatch": true,
       "hasFullDoc": true,
@@ -271,6 +288,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Full document detected from active \\documentclass and \\begin{document}.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -278,6 +296,7 @@
       "filename": "nips_2017.sty",
       "project": "arXiv-1706.03762v7",
       "role": "dependency",
+      "fileRole": "dependency-library",
       "status": "preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -287,6 +306,7 @@
       "warnings": 1,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Dependency file detected from .sty extension.",
       "environmentsFound": [
         "tabular"
       ],
@@ -298,6 +318,7 @@
       "filename": "parameter_attention.tex",
       "project": "arXiv-1706.03762v7",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -307,6 +328,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tabular",
         "table"
@@ -320,6 +342,7 @@
       "filename": "results.tex",
       "project": "arXiv-1706.03762v7",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -329,6 +352,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tabular",
         "table"
@@ -342,6 +366,7 @@
       "filename": "sqrt_d_trick.tex",
       "project": "arXiv-1706.03762v7",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -351,6 +376,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -358,6 +384,7 @@
       "filename": "training.tex",
       "project": "arXiv-1706.03762v7",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -367,6 +394,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "equation"
       ],
@@ -378,6 +406,7 @@
       "filename": "visualizations.tex",
       "project": "arXiv-1706.03762v7",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -387,6 +416,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -394,6 +424,7 @@
       "filename": "why_self_attention.tex",
       "project": "arXiv-1706.03762v7",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -403,6 +434,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tabular",
         "table"
@@ -416,6 +448,7 @@
       "filename": "manual.tex",
       "project": "arXiv-1709.06005v2",
       "role": "main-document",
+      "fileRole": "full-document",
       "status": "preserved-with-warnings",
       "checksumMatch": true,
       "hasFullDoc": true,
@@ -425,6 +458,7 @@
       "warnings": 1,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Full document detected from active \\documentclass and \\begin{document}.",
       "environmentsFound": [
         "tikzpicture",
         "lstlisting",
@@ -442,6 +476,7 @@
       "filename": "tikz-network.sty",
       "project": "arXiv-1709.06005v2",
       "role": "dependency",
+      "fileRole": "dependency-library",
       "status": "preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -451,6 +486,7 @@
       "warnings": 1,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Dependency file detected from .sty extension.",
       "environmentsFound": [
         "scope"
       ],
@@ -462,6 +498,7 @@
       "filename": "manuskryptszarek.tex",
       "project": "arXiv-1809.00384v1",
       "role": "main-document",
+      "fileRole": "full-document",
       "status": "preserved-with-warnings",
       "checksumMatch": true,
       "hasFullDoc": true,
@@ -471,6 +508,7 @@
       "warnings": 1,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Full document detected from active \\documentclass and \\begin{document}.",
       "environmentsFound": [
         "tikzpicture",
         "axis",
@@ -488,6 +526,7 @@
       "filename": "quantikz_manual_new.tex",
       "project": "arXiv-1809.03842v8",
       "role": "main-document",
+      "fileRole": "full-document",
       "status": "preserved",
       "checksumMatch": true,
       "hasFullDoc": true,
@@ -497,6 +536,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Full document detected from active \\documentclass and \\begin{document}.",
       "environmentsFound": [
         "Code",
         "FullCode",
@@ -520,6 +560,7 @@
       "filename": "tikzlibraryquantikz2.code.tex",
       "project": "arXiv-1809.03842v8",
       "role": "dependency",
+      "fileRole": "dependency-library",
       "status": "preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -529,6 +570,7 @@
       "warnings": 1,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "TikZ library detected from filename.",
       "environmentsFound": [
         "tikzpicture",
         "scope"
@@ -542,6 +584,7 @@
       "filename": "completions\\grammar.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -551,6 +594,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -562,6 +606,7 @@
       "filename": "completions\\newsgen_best.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -571,6 +616,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -582,6 +628,7 @@
       "filename": "completions\\newsgen_worst.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -591,6 +638,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -602,6 +650,7 @@
       "filename": "completions\\novel_words.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -611,6 +660,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -622,6 +672,7 @@
       "filename": "content\\1_introduction\\introduction.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -631,6 +682,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -642,6 +694,7 @@
       "filename": "content\\2_approach\\approach.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -651,6 +704,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -658,6 +712,7 @@
       "filename": "content\\2_approach\\evaluation.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -667,6 +722,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -674,6 +730,7 @@
       "filename": "content\\2_approach\\model_and_architectures.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -683,6 +740,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -690,6 +748,7 @@
       "filename": "content\\2_approach\\training_dataset.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -699,6 +758,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -706,6 +766,7 @@
       "filename": "content\\2_approach\\training_process.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -715,6 +776,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -722,6 +784,7 @@
       "filename": "content\\3_results\\ANLI.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -731,6 +794,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -738,6 +802,7 @@
       "filename": "content\\3_results\\Arithmetic.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -747,6 +812,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -754,6 +820,7 @@
       "filename": "content\\3_results\\Closed_Book_Question_Answering_-_Knowledge_Based_Tasks.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -763,6 +830,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tabular",
         "table",
@@ -778,6 +846,7 @@
       "filename": "content\\3_results\\Common_Sense_Reasoning.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -787,6 +856,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -794,6 +864,7 @@
       "filename": "content\\3_results\\Correcting_English_Grammar.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -803,6 +874,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -810,6 +882,7 @@
       "filename": "content\\3_results\\HellaSwag.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -819,6 +892,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -826,6 +900,7 @@
       "filename": "content\\3_results\\LAMBADA.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -835,6 +910,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -842,6 +918,7 @@
       "filename": "content\\3_results\\language_modeling.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -851,22 +928,25 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
     {
       "filename": "content\\3_results\\language_modeling_cloze_and_completion_tasks.tex",
       "project": "arXiv-2005.14165v4",
-      "role": "single-file",
-      "status": "converted",
-      "checksumMatch": false,
+      "role": "fragment",
+      "fileRole": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "inputLength": 262,
-      "outputLength": 587,
+      "outputLength": 262,
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -874,6 +954,7 @@
       "filename": "content\\3_results\\Learning_and_Using_Novel_Words.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -883,6 +964,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -890,6 +972,7 @@
       "filename": "content\\3_results\\News_Article_Generation.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -899,6 +982,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -906,6 +990,7 @@
       "filename": "content\\3_results\\Reading_Comprehension.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -915,6 +1000,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -922,6 +1008,7 @@
       "filename": "content\\3_results\\results.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -931,6 +1018,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -938,6 +1026,7 @@
       "filename": "content\\3_results\\SAT_Analogies.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -947,6 +1036,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -954,6 +1044,7 @@
       "filename": "content\\3_results\\StoryCloze.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -963,6 +1054,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -970,6 +1062,7 @@
       "filename": "content\\3_results\\SuperGLUE.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -979,22 +1072,25 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
     {
       "filename": "content\\3_results\\Synthetic_and_Qualitative_Tasks.tex",
       "project": "arXiv-2005.14165v4",
-      "role": "single-file",
-      "status": "converted",
-      "checksumMatch": false,
+      "role": "fragment",
+      "fileRole": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "inputLength": 926,
-      "outputLength": 1244,
+      "outputLength": 926,
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -1002,6 +1098,7 @@
       "filename": "content\\3_results\\Translation.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1011,6 +1108,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -1018,6 +1116,7 @@
       "filename": "content\\3_results\\Winograd-Style_Tasks.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1027,6 +1126,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -1034,6 +1134,7 @@
       "filename": "content\\3_results\\Word_Scrambling_and_Manipulation_Tasks.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1043,6 +1144,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -1050,6 +1152,7 @@
       "filename": "content\\4_preventing_memorization\\measuring_and_preventing_memorization_of_benchmarks.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1059,6 +1162,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -1070,6 +1174,7 @@
       "filename": "content\\5_limitations\\Limitations.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1079,6 +1184,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -1086,6 +1192,7 @@
       "filename": "content\\6_broader_impacts\\Broader_Impacts.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1095,6 +1202,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -1102,6 +1210,7 @@
       "filename": "content\\6_broader_impacts\\Energy.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1111,22 +1220,25 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
     {
       "filename": "content\\6_broader_impacts\\External_Incentive_Structures.tex",
       "project": "arXiv-2005.14165v4",
-      "role": "single-file",
-      "status": "converted",
-      "checksumMatch": false,
+      "role": "fragment",
+      "fileRole": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "inputLength": 1577,
-      "outputLength": 1932,
+      "outputLength": 1577,
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -1134,6 +1246,7 @@
       "filename": "content\\6_broader_impacts\\Fairness_Bias_and_Representation.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1143,6 +1256,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -1150,6 +1264,7 @@
       "filename": "content\\6_broader_impacts\\Future_Bias_and_Fairness_Challenges.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1159,6 +1274,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -1166,6 +1282,7 @@
       "filename": "content\\6_broader_impacts\\Gender.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1175,6 +1292,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -1182,6 +1300,7 @@
       "filename": "content\\6_broader_impacts\\misuse_of_language_models.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1191,6 +1310,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -1198,6 +1318,7 @@
       "filename": "content\\6_broader_impacts\\Potential_Misuse_Applications.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1207,6 +1328,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -1214,6 +1336,7 @@
       "filename": "content\\6_broader_impacts\\Race.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1223,6 +1346,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -1230,6 +1354,7 @@
       "filename": "content\\6_broader_impacts\\Religion.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1239,6 +1364,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -1246,6 +1372,7 @@
       "filename": "content\\6_broader_impacts\\Threat_Actor_Analysis.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1255,38 +1382,43 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
     {
       "filename": "content\\abstract.tex",
       "project": "arXiv-2005.14165v4",
-      "role": "single-file",
-      "status": "converted",
-      "checksumMatch": false,
+      "role": "fragment",
+      "fileRole": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "inputLength": 1792,
-      "outputLength": 2114,
+      "outputLength": 1792,
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
     {
       "filename": "content\\acknowledgements.tex",
       "project": "arXiv-2005.14165v4",
-      "role": "single-file",
-      "status": "converted",
-      "checksumMatch": false,
+      "role": "fragment",
+      "fileRole": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "inputLength": 1114,
-      "outputLength": 1435,
+      "outputLength": 1114,
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -1294,6 +1426,7 @@
       "filename": "content\\appendices\\additional_samples.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1303,6 +1436,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tabular",
         "figure"
@@ -1316,6 +1450,7 @@
       "filename": "content\\appendices\\commoncrawl_filtering.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1325,6 +1460,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -1332,6 +1468,7 @@
       "filename": "content\\appendices\\human_assessment.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1341,6 +1478,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -1348,6 +1486,7 @@
       "filename": "content\\appendices\\model_training.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1357,6 +1496,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -1364,6 +1504,7 @@
       "filename": "content\\appendices\\results_on_all_tasks.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1373,6 +1514,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tabular",
         "table",
@@ -1388,6 +1530,7 @@
       "filename": "content\\appendices\\task_phrasing.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1397,6 +1540,7 @@
       "warnings": 1,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": ".tex extension found.",
       "environmentsFound": [
         "figure"
       ],
@@ -1408,6 +1552,7 @@
       "filename": "content\\appendices\\test_set_contamination.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1417,6 +1562,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -1424,6 +1570,7 @@
       "filename": "content\\appendices\\total_compute_calculations.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1433,22 +1580,25 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
     {
       "filename": "content\\Conclusion.tex",
       "project": "arXiv-2005.14165v4",
-      "role": "single-file",
-      "status": "converted",
-      "checksumMatch": false,
+      "role": "fragment",
+      "fileRole": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "inputLength": 702,
-      "outputLength": 1024,
+      "outputLength": 702,
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -1456,6 +1606,7 @@
       "filename": "content\\contributions.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1465,6 +1616,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -1472,6 +1624,7 @@
       "filename": "content\\Related_Work.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1481,6 +1634,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -1488,6 +1642,7 @@
       "filename": "figures\\eval_strategies.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1497,6 +1652,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -1508,6 +1664,7 @@
       "filename": "figures\\metalearning.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1517,6 +1674,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -1528,6 +1686,7 @@
       "filename": "figures\\training_flops.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1537,6 +1696,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -1548,6 +1708,7 @@
       "filename": "graphs\\all_winograd.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1557,6 +1718,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tabular",
         "figure"
@@ -1570,6 +1732,7 @@
       "filename": "graphs\\anli.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1579,6 +1742,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -1590,6 +1754,7 @@
       "filename": "graphs\\arithmetic.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1599,6 +1764,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -1610,6 +1776,7 @@
       "filename": "graphs\\compute.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1619,6 +1786,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -1630,6 +1798,7 @@
       "filename": "graphs\\contamination.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1639,6 +1808,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -1650,6 +1820,7 @@
       "filename": "graphs\\coqa.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1659,6 +1830,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -1670,6 +1842,7 @@
       "filename": "graphs\\generation.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1679,6 +1852,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -1690,6 +1864,7 @@
       "filename": "graphs\\lambada.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1699,6 +1874,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -1710,6 +1886,7 @@
       "filename": "graphs\\newsduration.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1719,6 +1896,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -1730,6 +1908,7 @@
       "filename": "graphs\\physicalqa.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1739,6 +1918,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -1750,6 +1930,7 @@
       "filename": "graphs\\sat.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1759,6 +1940,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -1770,6 +1952,7 @@
       "filename": "graphs\\scramble.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1779,6 +1962,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -1790,6 +1974,7 @@
       "filename": "graphs\\scramble_prompted.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1799,6 +1984,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -1810,6 +1996,7 @@
       "filename": "graphs\\sentiment.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1819,6 +2006,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -1830,6 +2018,7 @@
       "filename": "graphs\\superglue_analysis.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1839,6 +2028,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -1850,6 +2040,7 @@
       "filename": "graphs\\translation.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1859,6 +2050,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -1870,6 +2062,7 @@
       "filename": "graphs\\winograd.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1879,6 +2072,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -1890,6 +2084,7 @@
       "filename": "main.tex",
       "project": "arXiv-2005.14165v4",
       "role": "main-document",
+      "fileRole": "full-document",
       "status": "preserved",
       "checksumMatch": true,
       "hasFullDoc": true,
@@ -1899,6 +2094,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Full document detected from active \\documentclass and \\begin{document}.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -1906,6 +2102,7 @@
       "filename": "neurips_2019.sty",
       "project": "arXiv-2005.14165v4",
       "role": "dependency",
+      "fileRole": "dependency-library",
       "status": "preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1915,6 +2112,7 @@
       "warnings": 1,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Dependency file detected from .sty extension.",
       "environmentsFound": [
         "tabular"
       ],
@@ -1926,6 +2124,7 @@
       "filename": "tables\\arithmetic.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1935,6 +2134,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tabular",
         "table"
@@ -1948,6 +2148,7 @@
       "filename": "tables\\completion.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1957,6 +2158,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tabular",
         "table"
@@ -1970,6 +2172,7 @@
       "filename": "tables\\dataset.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -1979,6 +2182,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tabular",
         "table"
@@ -1992,6 +2196,7 @@
       "filename": "tables\\gender.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2001,6 +2206,7 @@
       "warnings": 1,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "table"
       ],
@@ -2012,6 +2218,7 @@
       "filename": "tables\\generation.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2021,6 +2228,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tabular",
         "table"
@@ -2034,6 +2242,7 @@
       "filename": "tables\\generation_long.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2043,6 +2252,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tabular",
         "table"
@@ -2056,6 +2266,7 @@
       "filename": "tables\\language.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2065,6 +2276,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tabular",
         "table"
@@ -2078,6 +2290,7 @@
       "filename": "tables\\overlap_master.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2087,6 +2300,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tabular",
         "table"
@@ -2100,6 +2314,7 @@
       "filename": "tables\\param.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2109,6 +2324,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tabular",
         "table"
@@ -2122,6 +2338,7 @@
       "filename": "tables\\reading_comprehension.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2131,6 +2348,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tabular",
         "table"
@@ -2144,6 +2362,7 @@
       "filename": "tables\\reasoning.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2153,6 +2372,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tabular",
         "table"
@@ -2166,6 +2386,7 @@
       "filename": "tables\\religion.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2175,6 +2396,7 @@
       "warnings": 1,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "table"
       ],
@@ -2186,6 +2408,7 @@
       "filename": "tables\\study.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2195,6 +2418,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tabular",
         "table"
@@ -2208,6 +2432,7 @@
       "filename": "tables\\study_long.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2217,6 +2442,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tabular",
         "table"
@@ -2230,6 +2456,7 @@
       "filename": "tables\\superglue.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2239,6 +2466,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tabular",
         "table"
@@ -2252,6 +2480,7 @@
       "filename": "tables\\total_compute_calculations.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2261,6 +2490,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tabular",
         "table"
@@ -2274,6 +2504,7 @@
       "filename": "tables\\translation.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2283,6 +2514,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tabular",
         "table"
@@ -2296,6 +2528,7 @@
       "filename": "tables\\unscramble.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2305,6 +2538,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tabular",
         "table"
@@ -2318,6 +2552,7 @@
       "filename": "tables\\winograd.tex",
       "project": "arXiv-2005.14165v4",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2327,6 +2562,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tabular",
         "table"
@@ -2340,6 +2576,7 @@
       "filename": "automatikz.bib",
       "project": "arXiv-2310.00367v2",
       "role": "bibliography",
+      "fileRole": "bibliography",
       "status": "preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2349,6 +2586,7 @@
       "warnings": 1,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Bibliography detected from .bib extension.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -2356,6 +2594,7 @@
       "filename": "automatikz.tex",
       "project": "arXiv-2310.00367v2",
       "role": "main-document",
+      "fileRole": "full-document",
       "status": "preserved",
       "checksumMatch": true,
       "hasFullDoc": true,
@@ -2365,6 +2604,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Full document detected from active \\documentclass and \\begin{document}.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -2372,6 +2612,7 @@
       "filename": "figures\\clima\\barchart.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2381,6 +2622,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tikzpicture",
         "axis"
@@ -2394,6 +2636,7 @@
       "filename": "figures\\clima\\contour.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2403,6 +2646,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tikzpicture",
         "axis"
@@ -2416,6 +2660,7 @@
       "filename": "figures\\clima\\mlp.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2425,6 +2670,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tikzpicture"
       ],
@@ -2436,6 +2682,7 @@
       "filename": "figures\\clima.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2445,6 +2692,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tikzpicture"
       ],
@@ -2456,6 +2704,7 @@
       "filename": "figures\\examples\\bad\\clima-13b.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2465,6 +2714,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tikzpicture"
       ],
@@ -2476,6 +2726,7 @@
       "filename": "figures\\examples\\bad\\gpt-4.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2485,6 +2736,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tikzpicture",
         "axis"
@@ -2498,6 +2750,7 @@
       "filename": "figures\\examples\\bad\\llama-13b.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2507,6 +2760,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tikzpicture"
       ],
@@ -2518,6 +2772,7 @@
       "filename": "figures\\examples\\copying\\clima-13b\\1.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2527,6 +2782,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tikzpicture"
       ],
@@ -2538,6 +2794,7 @@
       "filename": "figures\\examples\\copying\\clima-13b\\2.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2547,6 +2804,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tikzpicture",
         "axis"
@@ -2560,6 +2818,7 @@
       "filename": "figures\\examples\\copying\\clima-13b\\3-full.tex",
       "project": "arXiv-2310.00367v2",
       "role": "main-document",
+      "fileRole": "full-document",
       "status": "validation-warning",
       "checksumMatch": true,
       "hasFullDoc": true,
@@ -2569,6 +2828,7 @@
       "warnings": 1,
       "errors": 1,
       "rawConfidence": 0.98,
+      "classificationReason": "Full document detected from active \\documentclass and \\begin{document}.",
       "environmentsFound": [
         "tikzpicture"
       ],
@@ -2580,6 +2840,7 @@
       "filename": "figures\\examples\\copying\\clima-13b\\3.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2589,6 +2850,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tikzpicture"
       ],
@@ -2600,6 +2862,7 @@
       "filename": "figures\\examples\\copying\\gpt-4\\1.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2609,6 +2872,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tikzpicture",
         "scope"
@@ -2622,6 +2886,7 @@
       "filename": "figures\\examples\\copying\\gpt-4\\2.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2631,6 +2896,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tikzpicture",
         "axis"
@@ -2644,6 +2910,7 @@
       "filename": "figures\\examples\\copying\\gpt-4\\3-full.tex",
       "project": "arXiv-2310.00367v2",
       "role": "main-document",
+      "fileRole": "full-document",
       "status": "preserved",
       "checksumMatch": true,
       "hasFullDoc": true,
@@ -2653,6 +2920,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Full document detected from active \\documentclass and \\begin{document}.",
       "environmentsFound": [
         "tikzpicture"
       ],
@@ -2664,6 +2932,7 @@
       "filename": "figures\\examples\\copying\\gpt-4\\3.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2673,6 +2942,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tikzpicture"
       ],
@@ -2684,6 +2954,7 @@
       "filename": "figures\\examples\\datikz\\1.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2693,6 +2964,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tikzpicture"
       ],
@@ -2704,6 +2976,7 @@
       "filename": "figures\\examples\\datikz\\2.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2713,6 +2986,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tikzpicture",
         "axis"
@@ -2726,6 +3000,7 @@
       "filename": "figures\\examples\\datikz\\3.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2735,6 +3010,7 @@
       "warnings": 1,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tikzpicture"
       ],
@@ -2746,6 +3022,7 @@
       "filename": "figures\\examples\\datikz\\4.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2755,6 +3032,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tikzpicture"
       ],
@@ -2766,6 +3044,7 @@
       "filename": "figures\\examples\\good\\clima-13b.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2775,6 +3054,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tikzpicture",
         "scope"
@@ -2788,6 +3068,7 @@
       "filename": "figures\\examples\\good\\gpt-4.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2797,6 +3078,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tikzpicture"
       ],
@@ -2808,6 +3090,7 @@
       "filename": "figures\\examples\\good\\llama-13b.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2817,6 +3100,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "tikzpicture"
       ],
@@ -2828,6 +3112,7 @@
       "filename": "requirements.txt",
       "project": "arXiv-2310.00367v2",
       "role": "single-file",
+      "fileRole": "plain-text",
       "status": "converted",
       "checksumMatch": false,
       "hasFullDoc": false,
@@ -2837,6 +3122,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "No significant LaTeX markers found; treating as plain text.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -2844,6 +3130,7 @@
       "filename": "sections\\acknowledgements.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2853,6 +3140,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -2860,6 +3148,7 @@
       "filename": "sections\\analysis.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2869,6 +3158,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -2880,6 +3170,7 @@
       "filename": "sections\\appendix.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2889,6 +3180,7 @@
       "warnings": 1,
       "errors": 1,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "wraptable",
         "tabular",
@@ -2906,6 +3198,7 @@
       "filename": "sections\\conclusion.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2915,6 +3208,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -2922,6 +3216,7 @@
       "filename": "sections\\data.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2931,6 +3226,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "wraptable",
         "tabular"
@@ -2944,6 +3240,7 @@
       "filename": "sections\\ethics.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2953,6 +3250,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -2960,6 +3258,7 @@
       "filename": "sections\\experiments.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2969,6 +3268,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -2980,6 +3280,7 @@
       "filename": "sections\\introduction.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -2989,6 +3290,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [
         "figure"
       ],
@@ -3000,6 +3302,7 @@
       "filename": "sections\\methods.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -3009,6 +3312,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -3016,6 +3320,7 @@
       "filename": "sections\\related.tex",
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
+      "fileRole": "fragment",
       "status": "fragment-preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -3025,6 +3330,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -3032,6 +3338,7 @@
       "filename": "styles\\automatikz.sty",
       "project": "arXiv-2310.00367v2",
       "role": "dependency",
+      "fileRole": "dependency-library",
       "status": "preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -3041,6 +3348,7 @@
       "warnings": 1,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Dependency file detected from .sty extension.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -3048,6 +3356,7 @@
       "filename": "styles\\fancyhdr.sty",
       "project": "arXiv-2310.00367v2",
       "role": "dependency",
+      "fileRole": "dependency-library",
       "status": "preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -3057,6 +3366,7 @@
       "warnings": 1,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Dependency file detected from .sty extension.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -3064,6 +3374,7 @@
       "filename": "styles\\iclr2024_conference.sty",
       "project": "arXiv-2310.00367v2",
       "role": "dependency",
+      "fileRole": "dependency-library",
       "status": "preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -3073,6 +3384,7 @@
       "warnings": 1,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Dependency file detected from .sty extension.",
       "environmentsFound": [
         "tabular"
       ],
@@ -3084,6 +3396,7 @@
       "filename": "styles\\natbib.sty",
       "project": "arXiv-2310.00367v2",
       "role": "dependency",
+      "fileRole": "dependency-library",
       "status": "preserved",
       "checksumMatch": true,
       "hasFullDoc": false,
@@ -3093,6 +3406,7 @@
       "warnings": 1,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Dependency file detected from .sty extension.",
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -3100,15 +3414,17 @@
       "filename": "completeness_validator_fix_bundle\\README_FIX.md",
       "project": "completeness_validator_fix_bundle",
       "role": "single-file",
-      "status": "failed",
+      "fileRole": "markdown",
+      "status": "converted",
       "checksumMatch": false,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "inputLength": 1451,
       "outputLength": 2055,
-      "warnings": 3,
-      "errors": 3,
+      "warnings": 0,
+      "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Mixed Markdown and LaTeX detected.",
       "environmentsFound": [],
       "environmentsPreserved": [
         "verbatim"
@@ -3117,16 +3433,18 @@
     {
       "filename": "completeness_validator_fix_bundle\\scripts\\fixtures\\hard_research_mixture_input.txt",
       "project": "completeness_validator_fix_bundle",
-      "role": "single-file",
+      "role": "main-document",
+      "fileRole": "full-document",
       "status": "preserved",
       "checksumMatch": false,
       "hasFullDoc": true,
-      "detectedFullDoc": false,
+      "detectedFullDoc": true,
       "inputLength": 6056,
       "outputLength": 140,
       "warnings": 1,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "No significant LaTeX markers found; treating as plain text.",
       "environmentsFound": [
         "tabular",
         "table",
@@ -3140,6 +3458,7 @@
       "filename": "latex-converter-final-all-phases-fix\\fixtures\\hard-research-mixture-input.txt",
       "project": "latex-converter-final-all-phases-fix",
       "role": "single-file",
+      "fileRole": "plain-text",
       "status": "converted",
       "checksumMatch": false,
       "hasFullDoc": false,
@@ -3149,6 +3468,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "No significant LaTeX markers found; treating as plain text.",
       "environmentsFound": [
         "equation"
       ],
@@ -3163,6 +3483,7 @@
       "filename": "latex-converter-final-all-phases-fix\\README.md",
       "project": "latex-converter-final-all-phases-fix",
       "role": "single-file",
+      "fileRole": "markdown",
       "status": "converted",
       "checksumMatch": false,
       "hasFullDoc": false,
@@ -3172,6 +3493,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Markdown structure detected.",
       "environmentsFound": [],
       "environmentsPreserved": [
         "verbatim"
@@ -3181,6 +3503,7 @@
       "filename": "pdf_quality_modes_fix_bundle\\README_FIX.md",
       "project": "pdf_quality_modes_fix_bundle",
       "role": "single-file",
+      "fileRole": "markdown",
       "status": "converted",
       "checksumMatch": false,
       "hasFullDoc": false,
@@ -3190,6 +3513,7 @@
       "warnings": 0,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Markdown structure detected.",
       "environmentsFound": [],
       "environmentsPreserved": [
         "verbatim"
@@ -3198,16 +3522,18 @@
     {
       "filename": "latex_stress_test_worlds_hardest.tex",
       "project": "standalone",
-      "role": "bibliography",
-      "status": "preserved",
+      "role": "main-document",
+      "fileRole": "full-document",
+      "status": "preserved-with-warnings",
       "checksumMatch": true,
       "hasFullDoc": true,
-      "detectedFullDoc": false,
+      "detectedFullDoc": true,
       "inputLength": 11618,
       "outputLength": 11618,
       "warnings": 1,
       "errors": 0,
       "rawConfidence": 0.98,
+      "classificationReason": "Full document detected from active \\documentclass and \\begin{document}.",
       "environmentsFound": [
         "tikzpicture",
         "axis",
@@ -3232,44 +3558,156 @@
         "equation",
         "cases"
       ]
+    },
+    {
+      "filename": "article_sty.sty",
+      "project": "standalone",
+      "role": "dependency",
+      "fileRole": "dependency-library",
+      "status": "preserved",
+      "checksumMatch": true,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "inputLength": 140,
+      "outputLength": 140,
+      "warnings": 1,
+      "errors": 0,
+      "rawConfidence": 0.98,
+      "classificationReason": "Dependency file detected from .sty extension.",
+      "environmentsFound": [],
+      "environmentsPreserved": []
+    },
+    {
+      "filename": "commented_documentclass.tex",
+      "project": "standalone",
+      "role": "fragment",
+      "fileRole": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": true,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "inputLength": 193,
+      "outputLength": 193,
+      "warnings": 0,
+      "errors": 0,
+      "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
+      "environmentsFound": [],
+      "environmentsPreserved": []
+    },
+    {
+      "filename": "latex_stress_test_worlds_hardest.tex",
+      "project": "standalone",
+      "role": "main-document",
+      "fileRole": "full-document",
+      "status": "preserved",
+      "checksumMatch": true,
+      "hasFullDoc": true,
+      "detectedFullDoc": true,
+      "inputLength": 195,
+      "outputLength": 195,
+      "warnings": 0,
+      "errors": 0,
+      "rawConfidence": 0.98,
+      "classificationReason": "Full document detected from active \\documentclass and \\begin{document}.",
+      "environmentsFound": [],
+      "environmentsPreserved": []
+    },
+    {
+      "filename": "mixed_prose_fragment.txt",
+      "project": "standalone",
+      "role": "fragment",
+      "fileRole": "fragment",
+      "status": "fragment-preserved",
+      "checksumMatch": true,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "inputLength": 205,
+      "outputLength": 205,
+      "warnings": 0,
+      "errors": 0,
+      "rawConfidence": 0.98,
+      "classificationReason": "Fragment detected from presence of LaTeX commands or environments without full document structure.",
+      "environmentsFound": [
+        "equation"
+      ],
+      "environmentsPreserved": [
+        "equation"
+      ]
+    },
+    {
+      "filename": "pdfoutput_before_documentclass.tex",
+      "project": "standalone",
+      "role": "main-document",
+      "fileRole": "full-document",
+      "status": "preserved",
+      "checksumMatch": true,
+      "hasFullDoc": true,
+      "detectedFullDoc": true,
+      "inputLength": 121,
+      "outputLength": 121,
+      "warnings": 0,
+      "errors": 0,
+      "rawConfidence": 0.98,
+      "classificationReason": "Full document detected from active \\documentclass and \\begin{document}.",
+      "environmentsFound": [],
+      "environmentsPreserved": []
+    },
+    {
+      "filename": "sample_bib.bib",
+      "project": "standalone",
+      "role": "bibliography",
+      "fileRole": "bibliography",
+      "status": "preserved",
+      "checksumMatch": true,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "inputLength": 128,
+      "outputLength": 128,
+      "warnings": 1,
+      "errors": 0,
+      "rawConfidence": 0.98,
+      "classificationReason": "Bibliography detected from .bib extension.",
+      "environmentsFound": [],
+      "environmentsPreserved": []
+    },
+    {
+      "filename": "tikzlibrary_sample.code.tex",
+      "project": "standalone",
+      "role": "dependency",
+      "fileRole": "dependency-library",
+      "status": "preserved",
+      "checksumMatch": true,
+      "hasFullDoc": false,
+      "detectedFullDoc": false,
+      "inputLength": 91,
+      "outputLength": 91,
+      "warnings": 1,
+      "errors": 0,
+      "rawConfidence": 0.98,
+      "classificationReason": "TikZ library detected from filename.",
+      "environmentsFound": [],
+      "environmentsPreserved": []
     }
   ],
   "errors": [],
   "scores": {
     "projectHandling": 100,
-    "fullDocumentClassification": 81.81818181818183,
+    "fullDocumentClassification": 100,
     "dependencyLibrary": 100,
     "bibliography": 100,
     "fragmentClassification": 100,
-    "fragmentValidation": 92.19858156028369,
-    "rawPreservation": 99.32885906040269,
+    "fragmentValidation": 96.5034965034965,
+    "rawPreservation": 99.37888198757764,
     "compileStatus": 85,
-    "overall": 94.79320280485852
+    "overall": 97.61029731138427
   },
   "topBugs": [
     {
-      "file": "completeness_validator_fix_bundle\\README_FIX.md",
-      "project": "completeness_validator_fix_bundle",
-      "type": "converter bug",
-      "detail": "Conversion failed"
-    },
-    {
-      "file": "completeness_validator_fix_bundle\\scripts\\fixtures\\hard_research_mixture_input.txt",
-      "project": "completeness_validator_fix_bundle",
-      "type": "classifier bug",
-      "detail": "Missed full document"
-    },
-    {
       "file": "completeness_validator_fix_bundle\\scripts\\fixtures\\hard_research_mixture_input.txt",
       "project": "completeness_validator_fix_bundle",
       "type": "converter bug",
-      "detail": "Lost environments: tabular, table, align, equation, cases"
-    },
-    {
-      "file": "latex_stress_test_worlds_hardest.tex",
-      "project": "standalone",
-      "type": "classifier bug",
-      "detail": "Missed full document"
+      "detail": "Lost environments: tabular, table, align, equation, cases. Reason: No significant LaTeX markers found; treating as plain text."
     }
   ]
 }

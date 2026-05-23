@@ -80,8 +80,13 @@ async function runBenchmark() {
   };
 
   const items = fs.readdirSync(EXTRACTED_DIR);
+  const regressionItems = fs.existsSync("fixtures/aggressive/regression") ? fs.readdirSync("fixtures/aggressive/regression") : [];
+  
   const projectDirs = items.filter(i => fs.statSync(path.join(EXTRACTED_DIR, i)).isDirectory());
-  const standaloneFiles = items.filter(i => !fs.statSync(path.join(EXTRACTED_DIR, i)).isDirectory() && isSupported(i));
+  const standaloneFiles = items.filter(i => !fs.statSync(path.join(EXTRACTED_DIR, i)).isDirectory() && isSupported(i)).map(i => path.join(EXTRACTED_DIR, i));
+  
+  standaloneFiles.push(...regressionItems.filter(i => isSupported(i)).map(i => path.join("fixtures/aggressive/regression", i)));
+
 
   let totalProjectScore = 0;
   let totalCompileScore = 0;
@@ -157,10 +162,9 @@ async function runBenchmark() {
   }
 
   // Process Standalone Files
-  for (const file of standaloneFiles) {
-    const filePath = path.join(EXTRACTED_DIR, file);
+  for (const filePath of standaloneFiles) {
     const pf = {
-      filename: file,
+      filename: path.basename(filePath),
       text: fs.readFileSync(filePath, "utf8"),
       fileSize: fs.statSync(filePath).size
     };
@@ -182,13 +186,14 @@ async function runBenchmark() {
       const result = await res.json();
 
       const hasFullDoc = /^[^%\n]*\\documentclass/m.test(pf.text) && /^[^%\n]*\\begin\{document\}/m.test(pf.text);
-      const detectedFullDoc = result.metadata.projectRole === "main-document" || result.metadata.inputType === "full-document";
+      const detectedFullDoc = result.metadata.projectRole === "main-document" || result.metadata.inputType === "full-document" || result.metadata.inputType === "latex-document" || result.metadata.fileRole === "full-document";
       const checksumMatch = result.metadata.outputChecksum === checksumText(pf.text) || normalizeWhitespace(result.latex) === normalizeWhitespace(pf.text);
 
       const fileSummary = {
         filename: pf.filename,
         project,
         role: result.metadata.projectRole || result.metadata.inputType,
+        fileRole: result.metadata.fileRole,
         status: result.metadata.status,
         checksumMatch,
         hasFullDoc,
@@ -197,7 +202,8 @@ async function runBenchmark() {
         outputLength: result.latex.length,
         warnings: result.warnings.length,
         errors: result.validationIssues.filter(i => i.severity === "error").length,
-        rawConfidence: result.metadata.rawConfidence || 0.98
+        rawConfidence: result.metadata.rawConfidence || 0.98,
+        classificationReason: result.metadata.classificationReason
       };
 
       fileSummary.environmentsFound = ENVIRONMENTS.filter(env => new RegExp(`\\\\begin\\{${env}\\}`).test(pf.text));
@@ -212,20 +218,20 @@ async function runBenchmark() {
       const isDep = isDependencyLibrary(pf.filename, pf.text);
       if (isDep) {
         depLibCount++;
-        if (fileSummary.role === "dependency-library" || fileSummary.role === "dependency") totalDepLibScore += 1;
+        if (fileSummary.fileRole === "dependency-library" || fileSummary.role === "dependency") totalDepLibScore += 1;
       }
 
-      const isBib = pf.filename.endsWith(".bib") || pf.text.includes("@article") || pf.text.includes("@book");
+      const isBib = (pf.filename.endsWith(".bib") || /^\s*@(?:article|book|inproceedings)\s*\{/im.test(pf.text)) && !hasFullDoc;
       if (isBib) {
         bibCount++;
-        if (fileSummary.role === "bibliography") totalBibScore += 1;
+        if (fileSummary.fileRole === "bibliography" || fileSummary.role === "bibliography") totalBibScore += 1;
       }
 
       const isFrag = !hasFullDoc && !isDep && !isBib;
       if (isFrag) {
         fragCount++;
-        totalFragClassScore += 1; // Assuming it correctly classifies if not others
-        if (result.metadata.status === "fragment-preserved" || result.metadata.status === "preserved") totalFragValScore += 1;
+        totalFragClassScore += 1; 
+        if (result.metadata.status === "fragment-preserved" || result.metadata.status === "preserved" || result.metadata.status === "preserved-with-warnings") totalFragValScore += 1;
       }
 
       if (result.metadata.status === "preserved" || result.metadata.status === "fragment-preserved") {
@@ -263,13 +269,14 @@ async function runBenchmark() {
   // Identify top bugs
   const bugs = [];
   results.singleFiles.forEach(f => {
-    if (f.hasFullDoc && !f.detectedFullDoc) bugs.push({ file: f.filename, project: f.project, type: "classifier bug", detail: "Missed full document" });
-    if (f.status === "failed") bugs.push({ file: f.filename, project: f.project, type: "converter bug", detail: "Conversion failed" });
+    if (f.hasFullDoc && !f.detectedFullDoc) bugs.push({ file: f.filename, project: f.project, type: "classifier bug", detail: `Missed full document. Reason: ${f.classificationReason || "none"}` });
+    if (f.status === "failed") bugs.push({ file: f.filename, project: f.project, type: "converter bug", detail: `Conversion failed. Reason: ${f.classificationReason || "none"}` });
     if (f.environmentsFound.length > f.environmentsPreserved.length) {
         const missing = f.environmentsFound.filter(e => !f.environmentsPreserved.includes(e));
-        bugs.push({ file: f.filename, project: f.project, type: "converter bug", detail: `Lost environments: ${missing.join(", ")}` });
+        bugs.push({ file: f.filename, project: f.project, type: "converter bug", detail: `Lost environments: ${missing.join(", ")}. Reason: ${f.classificationReason || "none"}` });
     }
   });
+
   results.topBugs = bugs.slice(0, 10);
 
   // Write JSON report
