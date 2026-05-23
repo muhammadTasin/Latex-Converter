@@ -155,6 +155,14 @@ const protectedEnvironments = new Set([
   "algorithm",
   "algorithmic",
   "tikzcd",
+  "tikzpicture",
+  "axis",
+  "scope",
+  "pgfplots",
+  "wraptable",
+  "wrapfigure",
+  "subfigure",
+  "subtable",
   "abstract"
 ]);
 
@@ -523,13 +531,23 @@ function stripLeadingWhitespaceAndLatexComments(text: string): string {
 }
 
 function containsLatexDocumentMarkers(text: string): boolean {
-  return /\\documentclass(?:\[[^\]]*\])?\{[^}]+\}/.test(text) && /\\begin\{document\}/.test(text);
+  const cleaned = stripLatexCommentsPreservingLines(text);
+  return /\\documentclass(?:\[[^\]]*\])?\{[^}]+\}/.test(cleaned) && /\\begin\{document\}/.test(cleaned);
 }
 
 function isLatexDocumentAtMeaningfulStart(text: string): boolean {
   const meaningfulStart = stripLeadingWhitespaceAndLatexComments(text);
+  const docClassMatch = /\\documentclass(?:\[[^\]]*\])?\{[^}]+\}/.exec(meaningfulStart);
 
-  return /^\\documentclass(?:\[[^\]]*\])?\{[^}]+\}/.test(meaningfulStart) && /\\begin\{document\}/.test(meaningfulStart);
+  if (!docClassMatch || !/\\begin\{document\}/.test(meaningfulStart)) return false;
+
+  const docClassIndex = meaningfulStart.indexOf(docClassMatch[0]);
+  const leadingText = meaningfulStart.slice(0, docClassIndex).trim();
+
+  if (leadingText.length === 0) return true;
+
+  // If there is leading text before \documentclass, it must look like LaTeX commands, not prose.
+  return /^\\(?:RequirePackage|PassOptionsToPackage|def|new|provide|let|input|include|usepackage)\b/.test(leadingText);
 }
 
 function isFullLatexDocument(text: string): boolean {
@@ -1217,7 +1235,7 @@ function buildMetadata(
 }
 
 function finalizeMetadata(metadata: ConversionMetadata, latex: string, validationIssues: ValidationIssue[]): ConversionMetadata {
-  const status = getFinalStatus(metadata.status, metadata.compileResult, validationIssues);
+  const status = getFinalStatus(metadata.status, metadata.compileResult, validationIssues, metadata);
   return {
     ...metadata,
     outputLength: latex.length,
@@ -1229,7 +1247,8 @@ function finalizeMetadata(metadata: ConversionMetadata, latex: string, validatio
 function getFinalStatus(
   status: ConversionMetadata["status"],
   compileResult: CompileResult | undefined,
-  validationIssues: ValidationIssue[]
+  validationIssues: ValidationIssue[],
+  metadata?: Pick<ConversionMetadata, "fileRole" | "conversionMode" | "inputType">
 ): ConversionMetadata["status"] {
   if (status === "failed") {
     return "failed";
@@ -1239,25 +1258,49 @@ function getFinalStatus(
     return "compile-failed";
   }
 
+  const isFragment = metadata?.fileRole === "fragment";
   const hasErrors = hasFatalValidationIssues(validationIssues);
   const hasWarnings = validationIssues.some((issue) => issue.severity === "warning");
 
   if (hasErrors) {
-    if (validationIssues.some(isProductionGateFailure)) {
+    if (validationIssues.some((issue) => isProductionGateFailure(issue, metadata))) {
       return "failed";
+    }
+
+    if (isFragment) {
+      return metadata?.conversionMode === "recover-raw" ? "fragment-preserved" : "preserved-with-warnings";
     }
 
     return status === "preserved" ? "validation-warning" : "failed";
   }
 
   if (hasWarnings) {
+    if (isFragment && metadata?.conversionMode === "recover-raw") {
+      return "fragment-preserved";
+    }
     return status === "preserved" ? "preserved-with-warnings" : "validation-warning";
+  }
+
+  if (isFragment) {
+    if (metadata?.conversionMode === "compile-ready" && compileResult?.status === "skipped") {
+      return "compile-skipped";
+    }
+    return metadata?.conversionMode === "recover-raw" ? "fragment-preserved" : "preserved";
   }
 
   return status;
 }
 
-function isProductionGateFailure(issue: ValidationIssue): boolean {
+function isProductionGateFailure(issue: ValidationIssue, metadata?: Pick<ConversionMetadata, "fileRole" | "inputType">): boolean {
+  const isFragment = metadata?.fileRole === "fragment" || metadata?.inputType === "latex-fragment";
+
+  if (isFragment) {
+    // Fragments are allowed to miss document structure
+    if (/(Missing final integrity marker|Output does not end with \\end\{document\}|Missing \\end\{document\}|Missing real \\begin\{document\})/i.test(issue.message)) {
+      return false;
+    }
+  }
+
   return (
     issue.severity === "error" &&
     /(Missing final integrity marker|Raw PDF internals|unclosed verbatim|Output does not end with \\end\{document\}|Missing \\end\{document\}|Missing real \\begin\{document\})/i.test(
@@ -3151,8 +3194,9 @@ const knownLatexEnvironments = new Set([
   "subequations",
   "tikzpicture",
   "lstlisting",
-  "environment",
-  "plainenvironment",
+  "Code",
+  "FullCode",
+  "environment",  "plainenvironment",
   "contextenvironment",
   "pgfmanualentry",
   "codeexample",
@@ -3208,7 +3252,9 @@ function validateLatex(
     lineAt
   );
 
-  if (!/\\begin\{document\}/.test(checkedLatex)) {
+  const isFragment = options.inputType === "latex-fragment";
+
+  if (!isFragment && !/\\begin\{document\}/.test(checkedLatex)) {
     issues.push({
       severity: "error",
       message: "Missing real \\begin{document} in generated LaTeX output.",
@@ -3216,7 +3262,7 @@ function validateLatex(
     });
   }
 
-  if (!/\\end\{document\}/.test(checkedLatex)) {
+  if (!isFragment && !/\\end\{document\}/.test(checkedLatex)) {
     issues.push({
       severity: "error",
       message: "Missing \\end{document} in full LaTeX document output.",
@@ -3224,7 +3270,7 @@ function validateLatex(
     });
   }
 
-  if ((options.inputType === "latex-document" || isFullLatexDocument(latex)) && !/\\end\{document\}\s*$/.test(checkedLatex)) {
+  if (!isFragment && (options.inputType === "latex-document" || isFullLatexDocument(latex)) && !/\\end\{document\}\s*$/.test(checkedLatex)) {
     issues.push({
       severity: "error",
       message: "Output does not end with \\end{document}.",

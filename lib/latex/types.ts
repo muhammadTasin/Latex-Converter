@@ -64,7 +64,15 @@ export type ConversionMetadata = {
   outputType: LatexOutputType;
   outputFilename: string;
   outputChecksum: string;
-  status: "converted" | "preserved" | "preserved-with-warnings" | "validation-warning" | "compile-failed" | "failed";
+  status:
+    | "converted"
+    | "preserved"
+    | "preserved-with-warnings"
+    | "fragment-preserved"
+    | "compile-skipped"
+    | "validation-warning"
+    | "compile-failed"
+    | "failed";
   largeInput: boolean;
   conversionMode?: LatexSnippetMode;
   fileRole?: LatexFileRole;
