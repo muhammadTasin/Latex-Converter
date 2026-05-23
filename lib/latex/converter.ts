@@ -150,6 +150,11 @@ const protectedEnvironments = new Set([
   "array",
   "table",
   "tabular",
+  "tabular*",
+  "tabularx",
+  "tabulary",
+  "longtable",
+  "booktabs",
   "theorem",
   "proof",
   "algorithm",
@@ -243,7 +248,8 @@ export function convertTextToLatex(input: LatexConversionInput): LatexConversion
     };
   }
 
-  const normalized = normalizeWhitespace(sourceText);
+  const isRawMode = conversionMode === "recover-raw";
+  const normalized = isRawMode ? sourceText : normalizeWhitespace(sourceText);
   const preparedText = shouldPreserveInputExactly(normalized) ? normalized : normalizeStructuredLabels(normalized);
   const classification = classifyLatexFile(preparedText, input.filename, input.sourceKind);
   const inputType = classification.inputType;
@@ -282,10 +288,10 @@ export function convertTextToLatex(input: LatexConversionInput): LatexConversion
     };
   }
 
-  if (conversionMode === "recover-raw" && inputType === "plain-text") {
+  if (isRawMode && inputType === "plain-text") {
     const recoveredDocument = recoverEmbeddedLatexDocument(preparedText);
     if (recoveredDocument) {
-      const latex = preserveLatexSource(recoveredDocument, input, language.code);
+      const latex = recoveredDocument;
       const validationIssues = validateLatex(latex, {
         latexMode: true,
         inputType: "latex-document",
@@ -344,8 +350,8 @@ export function convertTextToLatex(input: LatexConversionInput): LatexConversion
   }
 
   if (inputType === "latex-document" || inputType === "latex-fragment") {
-    const latex = inputType === "latex-fragment" && conversionMode === "recover-raw" ? preparedText : preserveLatexSource(preparedText, input, language.code);
-    const validationIssues = validateLatex(latex, { latexMode: true, inputType, inputLength: preparedText.length, sourceText: preparedText });
+    const latex = isRawMode ? sourceText : preserveLatexSource(preparedText, input, language.code);
+    const validationIssues = validateLatex(latex, { latexMode: true, inputType, inputLength: sourceBytes, sourceText: sourceText });
     const compileResult =
       conversionMode === "compile-ready"
         ? validateLatexCompileProject([{ filename: input.filename ?? "main.tex", text: latex, fileSize: sourceBytes }], input.filename ?? "main.tex")
@@ -357,7 +363,7 @@ export function convertTextToLatex(input: LatexConversionInput): LatexConversion
       metadata: finalizeMetadata(
         {
           ...metadata,
-          outputType: inputType === "latex-fragment" && conversionMode === "recover-raw" ? "latex-fragment" : metadata.outputType,
+          outputType: inputType === "latex-fragment" && isRawMode ? "latex-fragment" : metadata.outputType,
           status: "preserved",
           compileConfidence: compileResult.status === "success" ? 0.9 : compileResult.status === "failed" ? 0.2 : 0,
           compileResult
@@ -536,18 +542,41 @@ function containsLatexDocumentMarkers(text: string): boolean {
 }
 
 function isLatexDocumentAtMeaningfulStart(text: string): boolean {
-  const meaningfulStart = stripLeadingWhitespaceAndLatexComments(text);
-  const docClassMatch = /\\documentclass(?:\[[^\]]*\])?\{[^}]+\}/.exec(meaningfulStart);
+  // We allow comments, blank lines, and setup commands/primitives before \documentclass.
+  const cleaned = text.replace(/^\uFEFF/, "");
+  const docClassMatch = /\\documentclass(?:\[[^\]]*\])?\{[^}]+\}/.exec(cleaned);
 
-  if (!docClassMatch || !/\\begin\{document\}/.test(meaningfulStart)) return false;
+  if (!docClassMatch || !/\\begin\{document\}/.test(cleaned)) return false;
 
-  const docClassIndex = meaningfulStart.indexOf(docClassMatch[0]);
-  const leadingText = meaningfulStart.slice(0, docClassIndex).trim();
+  const docClassIndex = cleaned.indexOf(docClassMatch[0]);
+  const leadingText = cleaned.slice(0, docClassIndex);
 
-  if (leadingText.length === 0) return true;
+  if (leadingText.trim().length === 0) return true;
 
-  // If there is leading text before \documentclass, it must look like LaTeX commands, not prose.
-  return /^\\(?:RequirePackage|PassOptionsToPackage|def|new|provide|let|input|include|usepackage)\b/.test(leadingText);
+  const lines = leadingText.split("\n");
+  const setupCommandPattern = /^\\(?:pdfoutput|PassOptionsToPackage|RequirePackage|providecommand|newcommand|def|let|makeatletter|makeatother|if[a-zA-Z]+|else|fi|usepackage|input|include|title|author|date|catcode|count|dimen|skip|toks|box|setbox|wd|ht|dp|hss|vss|hfil|vfil|hskip|vskip|hbox|vbox|vtop|message|errmessage|show|showthe|special|hyphenation|penalty|lowercase|uppercase|mathcode|delcode)\b/;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed === "" || trimmed.startsWith("%")) continue;
+    
+    // Check if the line starts with a known setup command or primitive.
+    // Also allow multiple commands on one line if they all match.
+    const commands = trimmed.match(/\\[a-zA-Z]+/g);
+    if (!commands) return false;
+    
+    if (trimmed.startsWith("\\") && setupCommandPattern.test(trimmed)) {
+       // Check if there is any non-LaTeX prose in the rest of the line.
+       // This is a heuristic: if it has many spaces and long words, it's prose.
+       const proseText = trimmed.replace(/\\[a-zA-Z]+(?:\[[^\]]*\])?(?:\{[^{}]*\})*/g, "").trim();
+       if (proseText.length > 20 && proseText.includes(" ")) return false;
+       continue;
+    }
+    
+    return false;
+  }
+
+  return true;
 }
 
 function isFullLatexDocument(text: string): boolean {
@@ -1288,6 +1317,14 @@ function getFinalStatus(
     return metadata?.conversionMode === "recover-raw" ? "fragment-preserved" : "preserved";
   }
 
+  if (metadata?.conversionMode === "recover-raw" && status === "preserved") {
+    return "preserved";
+  }
+
+  if (compileResult?.missingFile) {
+    return "missing-assets";
+  }
+
   return status;
 }
 
@@ -1959,9 +1996,15 @@ function collectRawLatexBlock(lines: string[], startIndex: number): { lines: str
   }
 
   const environmentName = getBeginEnvironmentName(line);
-  if (environmentName && (knownLatexEnvironments.has(environmentName) || protectedEnvironments.has(environmentName))) {
-    const environment = collectRawEnvironment(lines, startIndex, environmentName);
-    return { lines: environment.content, nextIndex: environment.nextIndex };
+  if (environmentName) {
+    const isProtected = protectedEnvironments.has(environmentName);
+    const isMath = mathEnvironments.has(environmentName);
+    const isKnown = knownLatexEnvironments.has(environmentName);
+
+    if (isProtected || isMath || isKnown || /^(tabular|table|align|equation|cases|tikzpicture|axis|scope|wraptable|wrapfigure|lstlisting|verbatim)/.test(environmentName)) {
+      const environment = collectRawEnvironment(lines, startIndex, environmentName);
+      return { lines: environment.content, nextIndex: environment.nextIndex };
+    }
   }
 
   if (/^\\(?:section|subsection|subsubsection|paragraph)\*?\{/.test(line)) {
