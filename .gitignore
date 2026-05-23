@@ -14,3 +14,5 @@ next-start.out.log
 prod-server.err.log
 prod-server.out.log
 fixtures/aggressive/
+temp-hard-tests/
+benchmark-results/*.json
