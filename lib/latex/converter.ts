@@ -2832,7 +2832,9 @@ const knownLatexEnvironments = new Set([
   "command",
   "stylekey",
   "key",
-  "shape"
+  "shape",
+  "math-function",
+  "arrowtipsimple"
 ]);
 
 function validateLatex(

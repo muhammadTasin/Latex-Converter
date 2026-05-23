@@ -167,12 +167,16 @@ const alignedRowSpacing = convertTextToLatex({
 \begin{aligned}
 a &= b \\[8pt]
 c &= d \\[4pt]
+d &= e \\*[6pt]
+e &= f \\[-3pt]
 \end{aligned}
 \]`,
   filename: "aligned-row-spacing.tex"
 });
 assertIncludes(alignedRowSpacing.latex, String.raw`\\[8pt]`, "Test D4: aligned row spacing 8pt should be preserved");
 assertIncludes(alignedRowSpacing.latex, String.raw`\\[4pt]`, "Test D4: aligned row spacing 4pt should be preserved");
+assertIncludes(alignedRowSpacing.latex, String.raw`\\*[6pt]`, "Test D4: aligned starred row spacing should be preserved");
+assertIncludes(alignedRowSpacing.latex, String.raw`\\[-3pt]`, "Test D4: aligned negative row spacing should be preserved");
 assert(!hasDisplayDelimiterIssue(alignedRowSpacing, "\\["), "Test D4: multiple row spacing commands should not report unmatched display opener");
 assert(!hasDisplayDelimiterIssue(alignedRowSpacing, "\\]"), "Test D4: multiple row spacing commands should not report unmatched display closer");
 
@@ -291,6 +295,12 @@ ConTeXt environment docs.
 \begin{shape}
 Shape docs.
 \end{shape}
+\begin{math-function}{Hom}
+Math function documentation.
+\end{math-function}
+\begin{arrowtipsimple}{Rightarrow}
+Arrow tip documentation.
+\end{arrowtipsimple}
 \end{document}`,
   filename: "latex-documentation-environments.tex"
 });
@@ -308,6 +318,29 @@ Balanced custom documentation content.
 });
 assert(balancedUnknownEnvironment.metadata.status !== "failed", "Test H3: balanced unknown environments should not fail conversion");
 assert(balancedUnknownEnvironment.validationIssues.some((issue) => issue.severity === "info" && /custommanualblock/.test(issue.message)), "Test H3: balanced unknown environments should remain informational");
+
+const mismatchedUnknownEnvironment = convertTextToLatex({
+  text: String.raw`\documentclass{article}
+\begin{document}
+\begin{customunknown}
+Broken custom documentation content.
+\end{differentname}
+\end{document}`,
+  filename: "mismatched-unknown-environment.tex"
+});
+assert(mismatchedUnknownEnvironment.metadata.status === "failed", "Test H4: mismatched unknown environments should fail conversion");
+assert(mismatchedUnknownEnvironment.validationIssues.some((issue) => issue.severity === "error" && /Unbalanced environment/.test(issue.message)), "Test H4: mismatched unknown environments should produce an unbalanced-environment error");
+
+const unclosedUnknownEnvironment = convertTextToLatex({
+  text: String.raw`\documentclass{article}
+\begin{document}
+\begin{customunknown}
+Unclosed custom documentation content.
+\end{document}`,
+  filename: "unclosed-unknown-environment.tex"
+});
+assert(unclosedUnknownEnvironment.metadata.status === "failed", "Test H5: unclosed unknown environments should fail conversion");
+assert(unclosedUnknownEnvironment.validationIssues.some((issue) => issue.severity === "error" && /(Unbalanced environment|has no matching)/.test(issue.message)), "Test H5: unclosed unknown environments should produce a structural environment error");
 
 const mixedMarkdown = convertTextToLatex({
   text: String.raw`# Research Notes
