@@ -11,6 +11,7 @@ import {
   isStandaloneDependency,
   shouldShowDocumentMetadataFields
 } from "@/lib/latex/display";
+import { cleanOcrText } from "@/lib/ocr/utils";
 
 type ValidationIssue = {
   severity: "error" | "warning" | "info";
@@ -497,31 +498,90 @@ export function ConverterShell() {
     setValidationIssues([]);
   }
 
+  async function runBrowserOcr(file: File): Promise<OcrResponse> {
+    const { createWorker, PSM } = await import("tesseract.js");
+    const langObj = supportedLanguages.find((l) => l.code === language) || supportedLanguages[0];
+    const tesseractLanguage = langObj.tesseractCode;
+
+    const worker = await createWorker(tesseractLanguage, 1, {
+      logger: (message) => {
+        if (message.status === "recognizing text") {
+          setStatus(`OCR ${Math.round(message.progress * 100)}%`);
+        }
+      }
+    });
+
+    try {
+      await worker.setParameters({
+        tessedit_pageseg_mode: PSM.AUTO,
+        preserve_interword_spaces: "1"
+      });
+
+      const result = await worker.recognize(file);
+      const text = cleanOcrText(result.data.text, handwritingMode);
+      const confidence = Number.isFinite(result.data.confidence) ? result.data.confidence : null;
+      const warnings: string[] = [];
+
+      if (!text.trim()) {
+        warnings.push("No readable text was detected in the image. Try a sharper, higher-contrast image.");
+      }
+
+      if (confidence !== null && confidence < 55) {
+        warnings.push("OCR confidence is low. Review the extracted text before converting it to LaTeX.");
+      }
+
+      if (handwritingMode) {
+        warnings.push(
+          "Handwriting recognition with Tesseract is limited. For difficult handwritten equations, use Mathpix, Google Vision, Azure AI Vision, or a multimodal OCR provider."
+        );
+      }
+
+      return {
+        text,
+        confidence,
+        provider: "tesseract-browser",
+        warnings
+      };
+    } finally {
+      await worker.terminate();
+    }
+  }
+
   async function runOcr(file: File | null) {
     if (!file) {
       return;
     }
 
     setIsOcrRunning(true);
-    setStatus("Reading image");
+    setStatus("Preparing OCR");
     setWarnings([]);
     setValidationIssues([]);
 
     try {
-      const formData = new FormData();
-      formData.append("image", file);
-      formData.append("language", language);
-      formData.append("handwritingMode", String(handwritingMode));
+      let data: OcrResponse;
 
-      const response = await fetch("/api/ocr", {
-        method: "POST",
-        body: formData
-      });
-      const data = (await response.json()) as OcrResponse;
+      try {
+        // Prefer browser OCR to avoid Vercel server-side execution limits and heavy native dependencies
+        data = await runBrowserOcr(file);
+      } catch (browserError) {
+        console.warn("Browser OCR failed, falling back to API:", browserError);
+        setStatus("Falling back to server");
 
-      if (!response.ok || data.error) {
-        setWarnings(data.warnings ?? []);
-        throw new Error(data.error ?? "OCR failed.");
+        const formData = new FormData();
+        formData.append("image", file);
+        formData.append("language", language);
+        formData.append("handwritingMode", String(handwritingMode));
+
+        const response = await fetch("/api/ocr", {
+          method: "POST",
+          body: formData
+        });
+        data = (await response.json()) as OcrResponse;
+
+        if (!response.ok || data.error) {
+          setWarnings(data.warnings ?? []);
+          throw new Error(data.error ?? "OCR failed.");
+        }
       }
 
       const extractedText = (data.text ?? "").trim();
