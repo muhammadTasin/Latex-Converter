@@ -1,21 +1,9 @@
-# All Tests Benchmark
+# new hard LaTeX test Benchmark
 
-**Average Accuracy: 60.73%**
+**Average Accuracy: 38.60%**
 
 | File | Group | Size | Status | Errors | Warnings | Accuracy | Runtime | Explanation |
 |---|---|---|---|---|---|---|---|---|
-| advanced-latex-conversion-input.txt | academic/project document | 646 | Pass | 0 | 0 | 100.0% | 10ms | Success |
-| hard-research-mixture-input.txt | academic/project document | 1904 | Pass | 0 | 0 | 100.0% | 5ms | Success |
-| ultra-hard-output-consistency-input.txt | academic/project document | 2002 | Pass | 0 | 0 | 100.0% | 2ms | Success |
-| quantikz_manual_new.tex | fragment | 749 | Pass | 0 | 0 | 100.0% | 2ms | Success |
-| tikzlibraryquantikz2.code.tex | dependency-library | 259 | Pass | 0 | 1 | 100.0% | 0ms | Success |
-| doc-source-dtx.dtx | documentation-source | 1656 | Fail | 1 | 1 | 0.0% | 0ms | Unsupported file type for "doc-source-dtx.dtx". |
-| doc-source-ins.ins | documentation-source | 309 | Fail | 1 | 1 | 0.0% | 0ms | Unsupported file type for "doc-source-ins.ins". |
-| doc-source-ltxdoc.tex | documentation-source | 428 | Pass | 5 | 5 | 50.0% | 0ms | Duplicate \documentclass declarations were detected. |
-| mixed-prose-latex.txt | mixed prose + LaTeX | 331 | Pass | 0 | 0 | 100.0% | 0ms | Success |
-| bib-with-documentclass.bib | bibliography | 354 | Pass | 0 | 1 | 100.0% | 0ms | Success |
-| sty-with-article.sty | dependency-library | 148 | Pass | 0 | 1 | 100.0% | 0ms | Success |
-| tikzlibrarymylib.code.tex | dependency-library | 70 | Pass | 0 | 1 | 100.0% | 1ms | Success |
 | 01-biblatex.tex | new hard LaTeX test | 1080189 | Pass | 9 | 10 | 0.0% | 101ms | Duplicate \documentclass declarations were detected. |
 | 02-pgfmanual-main-body.tex | new hard LaTeX test | 28570 | Pass | 0 | 0 | 100.0% | 4ms | Success |
 | 03-tcolorbox.tex | new hard LaTeX test | 3689 | Pass | 0 | 0 | 100.0% | 1ms | Success |

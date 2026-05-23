@@ -1,0 +1,24 @@
+\documentclass{ltxdoc}
+\usepackage{testpkg}
+\begin{document}
+\title{The testpkg manual}
+\maketitle
+
+\section{Usage}
+To use this package:
+\begin{verbatim}
+\usepackage{testpkg}
+\end{verbatim}
+
+Here is a full example:
+\begin{ltxexample}
+\documentclass{article}
+\usepackage{testpkg}
+\begin{document}
+  \begin{testenv}
+    Inside the environment.
+  \end{testenv}
+\end{document}
+\endltxexample
+
+\end{document}

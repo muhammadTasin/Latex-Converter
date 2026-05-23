@@ -13,7 +13,8 @@ import type {
   LatexProjectConversionInput,
   LatexProjectRole,
   LatexSnippetMode,
-  ValidationIssue
+  ValidationIssue,
+  ValidationSeverity
 } from "@/lib/latex/types";
 
 export { maxConvertibleBytes };
@@ -193,7 +194,7 @@ const mathEnvironments = new Set([
   "array"
 ]);
 
-export const supportedTextFileExtensions = new Set(["tex", "txt", "md", "latex", "sty", "cls", "bbx", "cbx", "bib"]);
+export const supportedTextFileExtensions = new Set(["tex", "txt", "md", "latex", "sty", "cls", "bbx", "cbx", "bib", "dtx", "ins", "drv"]);
 const largePreviewThreshold = 1.5 * 1024 * 1024;
 const finalIntegrityMarker = "END_TEST_MARKER_OMEGA_999";
 
@@ -553,19 +554,19 @@ function stripLeadingWhitespaceAndLatexComments(text: string): string {
 
 function containsLatexDocumentMarkers(text: string): boolean {
   const cleaned = stripLatexCommentsPreservingLines(text);
-  return /\\documentclass(?:\[[^\]]*\])?\{[^}]+\}/.test(cleaned) && /\\begin\{document\}/.test(cleaned);
+  const masked = maskVerbatimLikeBlocks(cleaned);
+  return /\\documentclass(?:\[[^\]]*\])?\{[^}]+\}/.test(masked) && /\\begin\{document\}/.test(masked);
 }
 
 function isLatexDocumentAtMeaningfulStart(text: string): boolean {
-  // We allow comments, blank lines, and setup commands/primitives before \documentclass.
   const cleaned = text.replace(/^\uFEFF/, "");
-  // Use a more robust regex that ignores comments for finding \documentclass
   const uncommentedText = stripLatexCommentsPreservingLines(cleaned);
-  const docClassMatch = /\\documentclass(?:\[[^\]]*\])?\{[^}]+\}/.exec(uncommentedText);
+  const maskedText = maskVerbatimLikeBlocks(uncommentedText);
+  const docClassMatch = /\\documentclass(?:\[[^\]]*\])?\{[^}]+\}/.exec(maskedText);
 
-  if (!docClassMatch || !/\\begin\{document\}/.test(uncommentedText)) return false;
+  if (!docClassMatch || !/\\begin\{document\}/.test(maskedText)) return false;
 
-  const docClassIndex = uncommentedText.indexOf(docClassMatch[0]);
+  const docClassIndex = maskedText.indexOf(docClassMatch[0]);
   const leadingText = cleaned.slice(0, docClassIndex);
 
   if (leadingText.trim().length === 0) return true;
@@ -1441,9 +1442,9 @@ export function classifyLatexFile(text: string, filename?: string, sourceKind?: 
     return classification("dependency-library", "latex-fragment", "raw-source", "dependency", 0.98, 0, 0.95, reason);
   }
 
-  // Priority 2: Full Document (requires active, uncommented \documentclass and \begin{document})
-  if (isLatexDocumentAtMeaningfulStart(text)) {
-    return classification("full-document", "latex-document", "latex-document", "main-document", 0.98, 0.7, 0.85, "Full document detected from active \\documentclass and \\begin{document}.");
+  // Priority 2: Documentation Source (.dtx, .ins, ltxdoc, macrocode, etc.)
+  if (isDocumentationSource(text, filename)) {
+    return classification("documentation-source", "latex-document", "raw-source", "dependency", 0.9, 0.3, 0.7, "Documentation source detected from .dtx/.ins extension or specialized LaTeX documentation markers.");
   }
 
   // Priority 3: Content-based Bibliography/Dependency
@@ -1455,9 +1456,14 @@ export function classifyLatexFile(text: string, filename?: string, sourceKind?: 
     return classification("dependency-library", "latex-fragment", "raw-source", "dependency", 0.98, 0, 0.95, "Dependency file detected from specific LaTeX preamble commands.");
   }
 
+  // Priority 4: Full Document (requires active, uncommented \documentclass and \begin{document})
+  if (isLatexDocumentAtMeaningfulStart(text)) {
+    return classification("full-document", "latex-document", "latex-document", "main-document", 0.98, 0.7, 0.85, "Full document detected from active \\documentclass and \\begin{document}.");
+  }
+
   const inputType = detectInputType(text, filename);
 
-  // Priority 4: Fragments
+  // Priority 5: Fragments
   if (inputType === "latex-fragment") {
     return classification("fragment", "latex-fragment", "latex-document", "fragment", 0.8, 0.55, 0.65, "Fragment detected from presence of LaTeX commands or environments without full document structure.");
   }
@@ -1471,7 +1477,7 @@ export function classifyLatexFile(text: string, filename?: string, sourceKind?: 
     return classification("fragment", "latex-fragment", "latex-document", "fragment", 0.75, 0.45, 0.6, ".tex extension found.");
   }
 
-  // Priority 5: Markdown/Plain-text
+  // Priority 6: Markdown/Plain-text
   const reason = sourceKind === "pdf" ? "Plain text extracted from PDF." : "No significant LaTeX markers found; treating as plain text.";
   return classification("plain-text", inputType, "latex-document", "single-file", sourceKind === "pdf" ? 0.4 : 0.55, 0.25, sourceKind === "pdf" ? 0.25 : 0.35, reason);
 }
@@ -1507,6 +1513,21 @@ function isDependencyLibrarySource(text: string, filename?: string): boolean {
   // A dependency file should NOT have \begin{document} unless it is commented or in a verbatim block
   const cleaned = stripLatexCommentsPreservingLines(text);
   return (dependencyFilename || dependencyMarkers) && !/\\begin\{document\}/.test(cleaned);
+}
+
+function isDocumentationSource(text: string, filename?: string): boolean {
+  const extension = getFileExtension(filename);
+  
+  // Extension based
+  if (["dtx", "ins", "drv"].includes(extension)) return true;
+  
+  // Content based
+  const uncommented = stripLatexCommentsPreservingLines(text);
+  if (/\\documentclass(?:\[[^\]]*\])?\{ltxdoc\}/.test(uncommented)) return true;
+  if (/\\DocInput|\\begin\{macrocode\}|\\begin\{ltxexample\}|\\begin\{tcblisting\}|\\begin\{pgfmanualentry\}|\\begin\{command\}|\\begin\{environment\}|\\begin\{key\}/.test(uncommented)) return true;
+  if (/^%<\*.*>/.test(text)) return true; // docstrip markers
+  
+  return false;
 }
 
 function findMissingProjectDependencies(mainText: string, filenames: string[]): string[] {
@@ -2080,7 +2101,7 @@ function parseHeading(line: string): Block | null {
     };
   }
 
-  const numberedHeading = /^(\d+(?:\.\d+){0,2})[.)]?\s+(.+)$/.exec(line);
+  const numberedHeading = /^(\d+(?:\.\d+){0,2})[.)]?\s+(.+)$/.exec(line.trim());
   if (numberedHeading) {
     const headingText = numberedHeading[2].trim();
     const isAcademicHeading = /^(theorem|lemma|proof|remark)\.?$/i.test(headingText);
@@ -2643,7 +2664,7 @@ function collectPiecewiseBlock(lines: string[], startIndex: number): { body: str
       index += 1;
     }
     if (pieces.length >= 2) {
-      const rows = pieces.map((p, i) => `${transformMathText(p.value)}, & ${transformMathText(p.condition)}${i === pieces.length - 1 ? "." : ","}`);
+      const rows = pieces.map((p, i) => `${transformMathText(p.left)}, & ${transformMathText(p.condition)}${i === pieces.length - 1 ? "." : ","}`);
       return { body: [`${transformMathText(first.left)} =`, "\\begin{cases}", rows.join(" \\\\\n"), "\\end{cases}"].join("\n"), nextIndex: index };
     }
   }
@@ -3291,7 +3312,18 @@ const knownLatexEnvironments = new Set([
   "key",
   "shape",
   "math-function",
-  "arrowtipsimple"
+  "arrowtipsimple",
+  "ltxexample",
+  "macrocode",
+  "filecontents",
+  "filecontents*",
+  "comment",
+  "minted",
+  "listing",
+  "tcblisting",
+  "syntax",
+  "texexample",
+  "latexexample"
 ]);
 
 function validateLatex(
@@ -3337,16 +3369,20 @@ function validateLatex(
   }
 
   const isFullDoc = fileRole === "full-document";
+  const isDocSource = fileRole === "documentation-source";
   const isDep = fileRole === "dependency-library";
 
-  if (isFullDoc) {
+  if (isFullDoc || isDocSource) {
+    const severity = isFullDoc ? "error" : "warning";
+
     addDuplicateIssue(
       issues,
       checkedLatex,
       /\\documentclass(?:\[[^\]]*\])?\{[^}]+\}/g,
       "Duplicate \\documentclass declarations were detected.",
       "Keep exactly one \\documentclass declaration.",
-      lineAt
+      lineAt,
+      severity
     );
     addDuplicateIssue(
       issues,
@@ -3354,7 +3390,8 @@ function validateLatex(
       /\\begin\{document\}/g,
       "Duplicate \\begin{document} blocks were detected.",
       "Keep exactly one document body start.",
-      lineAt
+      lineAt,
+      severity
     );
     addDuplicateIssue(
       issues,
@@ -3362,12 +3399,13 @@ function validateLatex(
       /\\end\{document\}/g,
       "Duplicate \\end{document} blocks were detected.",
       "Keep exactly one document body end.",
-      lineAt
+      lineAt,
+      severity
     );
 
     if (!/\\begin\{document\}/.test(checkedLatex)) {
       issues.push({
-        severity: "error",
+        severity,
         message: "Missing real \\begin{document} in generated LaTeX output.",
         suggestedFix: "Regenerate the document wrapper or restore the document body start outside verbatim/code text."
       });
@@ -3375,7 +3413,7 @@ function validateLatex(
 
     if (!/\\end\{document\}/.test(checkedLatex)) {
       issues.push({
-        severity: "error",
+        severity,
         message: "Missing \\end{document} in full LaTeX document output.",
         suggestedFix: "Restore the closing document delimiter before downloading or compiling."
       });
@@ -3383,13 +3421,13 @@ function validateLatex(
 
     if (!/\\end\{document\}\s*$/.test(checkedLatex)) {
       issues.push({
-        severity: "error",
+        severity,
         message: "Output does not end with \\end{document}.",
         suggestedFix: "Check for truncated output or content appended after the document terminator."
       });
     }
 
-    const bodyCommandIssue = findDocumentLevelCommandInBodyIssue(checkedLatex, lineAt);
+    const bodyCommandIssue = findDocumentLevelCommandInBodyIssue(checkedLatex, lineAt, severity);
     if (bodyCommandIssue) {
       issues.push(bodyCommandIssue);
     }
@@ -3454,7 +3492,7 @@ function validateLatex(
     issues.push(rawPdfIssue);
   }
 
-  if (isFullDoc || fileRole === "fragment") {
+  if (isFullDoc || isDocSource || fileRole === "fragment") {
     const unconvertedLabelIssue = findUnconvertedStructuredLabelIssue(latex, options.inputType, lineAt);
     if (unconvertedLabelIssue) {
       issues.push(unconvertedLabelIssue);
@@ -3536,9 +3574,32 @@ function maskVerbatimLikeBlocks(latex: string, knownEnvironments = getKnownEnvir
 }
 
 function getCodeLikeEnvironments(knownEnvironments: Set<string>): Set<string> {
+  const defaults = [
+    "verbatim",
+    "lstlisting",
+    "minted",
+    "listing",
+    "tcblisting",
+    "ltxexample",
+    "macrocode",
+    "filecontents",
+    "filecontents*",
+    "comment",
+    "Code",
+    "FullCode",
+    "pgfmanualentry",
+    "command",
+    "environment",
+    "key",
+    "syntax",
+    "example",
+    "texexample",
+    "latexexample"
+  ];
   return new Set(
     [...knownEnvironments].filter(
       (environment) =>
+        defaults.includes(environment) ||
         /^(?:verbatim|lstlisting|codeexample|Code|FullCode)$/i.test(environment) ||
         /(?:code|listing|example)$/i.test(environment)
     )
@@ -3584,12 +3645,13 @@ function addDuplicateIssue(
   pattern: RegExp,
   message: string,
   suggestedFix: string,
-  lineAt: LineLookup
+  lineAt: LineLookup,
+  severity: ValidationSeverity = "error"
 ) {
   const matches = [...latex.matchAll(pattern)];
   if (matches.length > 1) {
     issues.push({
-      severity: "error",
+      severity,
       message,
       line: lineAt(matches[1].index ?? 0),
       suggestedFix
@@ -3714,7 +3776,7 @@ function validateEnvironmentBalanceAndNesting(latex: string, lineAt: LineLookup,
   return issues;
 }
 
-function findDocumentLevelCommandInBodyIssue(latex: string, lineAt: LineLookup): ValidationIssue | null {
+function findDocumentLevelCommandInBodyIssue(latex: string, lineAt: LineLookup, severity: ValidationSeverity = "error"): ValidationIssue | null {
   const beginMatch = /\\begin\{document\}/.exec(latex);
   const endMatch = /\\end\{document\}/g;
   let lastEndMatch: RegExpExecArray | null = null;
@@ -3737,7 +3799,7 @@ function findDocumentLevelCommandInBodyIssue(latex: string, lineAt: LineLookup):
   }
 
   return {
-    severity: "error",
+    severity,
     message: "Document-level LaTeX command was found inside the document body.",
     line: lineAt(bodyStart + (commandMatch.index ?? 0) + commandMatch[1].length),
     suggestedFix: "Move preamble commands before \\begin{document}, or wrap code examples in a verbatim/code block."

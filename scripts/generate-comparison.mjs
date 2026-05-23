@@ -11,30 +11,29 @@ function run() {
   const afterAcc = afterJson.reduce((acc, r) => acc + r.accuracy, 0) / afterJson.length;
   const improvement = afterAcc - beforeAcc;
 
-  const beforeExisting = beforeJson.filter(r => r.sourceGroup === "existing project test");
-  const afterExisting = afterJson.filter(r => r.sourceGroup === "existing project test");
-  const beforeHard = beforeJson.filter(r => r.sourceGroup === "new hard LaTeX test");
-  const afterHard = afterJson.filter(r => r.sourceGroup === "new hard LaTeX test");
-
-  const beforeExistingAcc = beforeExisting.reduce((acc, r) => acc + r.accuracy, 0) / beforeExisting.length;
-  const afterExistingAcc = afterExisting.reduce((acc, r) => acc + r.accuracy, 0) / afterExisting.length;
-  const beforeHardAcc = beforeHard.reduce((acc, r) => acc + r.accuracy, 0) / beforeHard.length;
-  const afterHardAcc = afterHard.reduce((acc, r) => acc + r.accuracy, 0) / afterHard.length;
+  const groups = [...new Set(beforeJson.map(r => r.sourceGroup))];
 
   let md = "# Comparison Report: LaTeX Converter Improvements\n\n";
-  md += `| Metric | Before | After | Improvement |\n`;
+  md += `| Category | Before | After | Improvement |\n`;
   md += `|---|---|---|---|\n`;
   md += `| **Overall Accuracy** | ${beforeAcc.toFixed(2)}% | ${afterAcc.toFixed(2)}% | **+${improvement.toFixed(2)}%** |\n`;
-  md += `| Existing Project Tests | ${beforeExistingAcc.toFixed(2)}% | ${afterExistingAcc.toFixed(2)}% | +${(afterExistingAcc - beforeExistingAcc).toFixed(2)}% |\n`;
-  md += `| New Hard LaTeX Tests | ${beforeHardAcc.toFixed(2)}% | ${afterHardAcc.toFixed(2)}% | +${(afterHardAcc - beforeHardAcc).toFixed(2)}% |\n\n`;
 
-  md += `## Per-File Before/After Table\n\n`;
+  for (const group of groups) {
+    const bGroup = beforeJson.filter(r => r.sourceGroup === group);
+    const aGroup = afterJson.filter(r => r.sourceGroup === group);
+    const bAcc = bGroup.reduce((acc, r) => acc + r.accuracy, 0) / (bGroup.length || 1);
+    const aAcc = aGroup.reduce((acc, r) => acc + r.accuracy, 0) / (aGroup.length || 1);
+    md += `| ${group} | ${bAcc.toFixed(2)}% | ${aAcc.toFixed(2)}% | +${(aAcc - bAcc).toFixed(2)}% |\n`;
+  }
+
+  md += `\n## Per-File Before/After Table\n\n`;
   md += `| File | Group | Before Acc | After Acc | Status Change | Explanation (After) |\n`;
   md += `|---|---|---|---|---|---|\n`;
 
   for (let i = 0; i < beforeJson.length; i++) {
     const b = beforeJson[i];
-    const a = afterJson[i];
+    // Find matching file in afterJson by name
+    const a = afterJson.find(r => r.fileName === b.fileName) || { accuracy: 0, conversionSucceeded: false, explanation: "Missing in after" };
     const statusChange = b.conversionSucceeded === a.conversionSucceeded ? "No Change" : (a.conversionSucceeded ? "FIXED" : "REGRESSION");
     md += `| ${b.fileName} | ${b.sourceGroup} | ${b.accuracy.toFixed(1)}% | ${a.accuracy.toFixed(1)}% | ${statusChange} | ${a.explanation} |\n`;
   }

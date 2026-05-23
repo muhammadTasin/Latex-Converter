@@ -7,7 +7,8 @@ export type LatexFileRole =
   | "bibliography"
   | "markdown"
   | "plain-text"
-  | "ocr-text";
+  | "ocr-text"
+  | "documentation-source";
 
 export type LatexProjectRole = "single-file" | "main-document" | "dependency" | "bibliography" | "fragment" | "project";
 

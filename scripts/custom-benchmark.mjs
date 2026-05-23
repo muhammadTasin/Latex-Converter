@@ -45,11 +45,22 @@ if (!fs.existsSync(OUTPUT_DIR)) {
 }
 
 const filesToTest = [
-  { group: "existing project test", path: path.join(FIXTURES_DIR, "advanced-latex-conversion-input.txt") },
-  { group: "existing project test", path: path.join(FIXTURES_DIR, "hard-research-mixture-input.txt") },
-  { group: "existing project test", path: path.join(FIXTURES_DIR, "quantikz_manual_new.tex") },
-  { group: "existing project test", path: path.join(FIXTURES_DIR, "tikzlibraryquantikz2.code.tex") },
-  { group: "existing project test", path: path.join(FIXTURES_DIR, "ultra-hard-output-consistency-input.txt") },
+  { group: "academic/project document", path: path.join(FIXTURES_DIR, "advanced-latex-conversion-input.txt") },
+  { group: "academic/project document", path: path.join(FIXTURES_DIR, "hard-research-mixture-input.txt") },
+  { group: "academic/project document", path: path.join(FIXTURES_DIR, "ultra-hard-output-consistency-input.txt") },
+  { group: "fragment", path: path.join(FIXTURES_DIR, "quantikz_manual_new.tex") },
+  { group: "dependency-library", path: path.join(FIXTURES_DIR, "tikzlibraryquantikz2.code.tex") },
+  
+  // New regression fixtures
+  { group: "documentation-source", path: path.join(FIXTURES_DIR, "doc-source-dtx.dtx") },
+  { group: "documentation-source", path: path.join(FIXTURES_DIR, "doc-source-ins.ins") },
+  { group: "documentation-source", path: path.join(FIXTURES_DIR, "doc-source-ltxdoc.tex") },
+  { group: "mixed prose + LaTeX", path: path.join(FIXTURES_DIR, "mixed-prose-latex.txt") },
+  { group: "bibliography", path: path.join(FIXTURES_DIR, "bib-with-documentclass.bib") },
+  { group: "dependency-library", path: path.join(FIXTURES_DIR, "sty-with-article.sty") },
+  { group: "dependency-library", path: path.join(FIXTURES_DIR, "tikzlibrarymylib.code.tex") },
+
+  // Hard LaTeX Tests
   { group: "new hard LaTeX test", path: path.join(HARD_TESTS_DIR, "01-biblatex.tex") },
   { group: "new hard LaTeX test", path: path.join(HARD_TESTS_DIR, "02-pgfmanual-main-body.tex") },
   { group: "new hard LaTeX test", path: path.join(HARD_TESTS_DIR, "03-tcolorbox.tex") },
@@ -62,16 +73,24 @@ const filesToTest = [
   { group: "new hard LaTeX test", path: path.join(HARD_TESTS_DIR, "10-pgfplotstable.tex") },
 ];
 
-function calculateAccuracy(input, result) {
+function calculateAccuracy(input, result, sourceGroup) {
   let score = 100;
   const { latex, validationIssues, metadata } = result;
   
   if (metadata.status === "failed" || metadata.status === "converter-failed") return 0;
   
+  // For bibliography and dependency-library, we expect raw preservation
+  if (["bibliography", "dependency-library", "documentation-source"].includes(sourceGroup) || metadata.fileRole === "bibliography" || metadata.fileRole === "dependency-library") {
+    if (latex.trim() === input.trim()) return 100;
+    // If not identical, check if it's at least a pass
+    if (validationIssues.filter(i => i.severity === "error").length === 0) return 90;
+    return 50;
+  }
+
   const fatalErrors = validationIssues.filter(i => i.severity === "error");
   score -= fatalErrors.length * 20;
 
-  const commonEnvs = ["tabular", "align", "equation", "cases", "tikzpicture", "verbatim", "lstlisting"];
+  const commonEnvs = ["tabular", "align", "equation", "cases", "tikzpicture", "verbatim", "lstlisting", "macrocode"];
   for (const env of commonEnvs) {
     const inInput = (input.match(new RegExp(`\\\\begin\\{${env}\\}`, "g")) || []).length;
     const inOutput = (latex.match(new RegExp(`\\\\begin\\{${env}\\}`, "g")) || []).length;
@@ -119,6 +138,7 @@ async function run() {
       result = convertTextToLatex({ text: input, filename: path.basename(testCase.path), fileSize: fs.statSync(testCase.path).size });
     } catch (e) {
       error = e.message;
+      console.error(`Error in ${testCase.path}:`, e);
     }
     const endTime = Date.now();
     
@@ -138,7 +158,7 @@ async function run() {
       unsupportedCommands: warnings.filter(w => w.toLowerCase().includes("unsupported")).map(w => w.match(/\\(\w+)/)?.[1]).filter(Boolean),
       runtime: endTime - startTime,
       outputLength: result?.latex.length || 0,
-      accuracy: result ? calculateAccuracy(input, result) : 0,
+      accuracy: result ? calculateAccuracy(input, result, testCase.group) : 0,
       explanation: error || (errors[0]?.message || "Success")
     };
     results.push(entry);
@@ -147,8 +167,6 @@ async function run() {
   const prefix = process.argv[2] || "before";
   const allTestsJsonPath = path.join(OUTPUT_DIR, `${prefix}-all-tests.json`);
   const allTestsMdPath = path.join(OUTPUT_DIR, `${prefix}-all-tests.md`);
-  const existingTestsMdPath = path.join(OUTPUT_DIR, `${prefix}-existing-project-tests.md`);
-  const hardTestsMdPath = path.join(OUTPUT_DIR, `${prefix}-latex-hard-tests.md`);
   
   fs.writeFileSync(allTestsJsonPath, JSON.stringify(results, null, 2));
   
@@ -164,8 +182,12 @@ async function run() {
   }
   
   fs.writeFileSync(allTestsMdPath, generateMd("All Tests Benchmark", () => true));
-  fs.writeFileSync(existingTestsMdPath, generateMd("Existing Project Tests Benchmark", r => r.sourceGroup === "existing project test"));
-  fs.writeFileSync(hardTestsMdPath, generateMd("Hard LaTeX Tests Benchmark", r => r.sourceGroup === "new hard LaTeX test"));
+  
+  const groups = [...new Set(results.map(r => r.sourceGroup))];
+  for (const group of groups) {
+      const groupFileName = group.replace(/\//g, "-").replace(/\s+/g, "-").toLowerCase();
+      fs.writeFileSync(path.join(OUTPUT_DIR, `${prefix}-${groupFileName}.md`), generateMd(`${group} Benchmark`, r => r.sourceGroup === group));
+  }
   
   console.log(`Benchmark complete. Results saved to benchmark-results/${prefix}-*`);
 }

@@ -1,21 +1,9 @@
-# All Tests Benchmark
+# new hard LaTeX test Benchmark
 
-**Average Accuracy: 79.55%**
+**Average Accuracy: 62.00%**
 
 | File | Group | Size | Status | Errors | Warnings | Accuracy | Runtime | Explanation |
 |---|---|---|---|---|---|---|---|---|
-| advanced-latex-conversion-input.txt | academic/project document | 646 | Pass | 0 | 0 | 100.0% | 10ms | Success |
-| hard-research-mixture-input.txt | academic/project document | 1904 | Pass | 0 | 0 | 100.0% | 4ms | Success |
-| ultra-hard-output-consistency-input.txt | academic/project document | 2002 | Pass | 0 | 0 | 100.0% | 3ms | Success |
-| quantikz_manual_new.tex | fragment | 749 | Pass | 0 | 0 | 100.0% | 1ms | Success |
-| tikzlibraryquantikz2.code.tex | dependency-library | 259 | Pass | 0 | 1 | 100.0% | 1ms | Success |
-| doc-source-dtx.dtx | documentation-source | 1656 | Pass | 0 | 1 | 90.0% | 2ms | Success |
-| doc-source-ins.ins | documentation-source | 309 | Pass | 0 | 1 | 90.0% | 0ms | Success |
-| doc-source-ltxdoc.tex | documentation-source | 428 | Pass | 2 | 4 | 50.0% | 1ms | \begin{document} has no matching \end{document}. |
-| mixed-prose-latex.txt | mixed prose + LaTeX | 331 | Pass | 0 | 0 | 100.0% | 0ms | Success |
-| bib-with-documentclass.bib | bibliography | 354 | Pass | 0 | 1 | 100.0% | 0ms | Success |
-| sty-with-article.sty | dependency-library | 148 | Pass | 0 | 1 | 100.0% | 0ms | Success |
-| tikzlibrarymylib.code.tex | dependency-library | 70 | Pass | 0 | 1 | 100.0% | 0ms | Success |
 | 01-biblatex.tex | new hard LaTeX test | 1080189 | Pass | 1 | 4 | 72.0% | 115ms | \begin{document} has no matching \end{document}. |
 | 02-pgfmanual-main-body.tex | new hard LaTeX test | 28570 | Pass | 0 | 0 | 100.0% | 6ms | Success |
 | 03-tcolorbox.tex | new hard LaTeX test | 3689 | Pass | 0 | 0 | 100.0% | 0ms | Success |
