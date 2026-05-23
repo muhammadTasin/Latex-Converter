@@ -6,7 +6,7 @@
       "status": "compile-failed",
       "compileStatus": "failed",
       "warnings": 4,
-      "issues": 111,
+      "issues": 107,
       "mainFile": "manual.tex"
     },
     {
@@ -32,9 +32,9 @@
       "fileCount": 39,
       "status": "compile-failed",
       "compileStatus": "failed",
-      "warnings": 7,
-      "issues": 2,
-      "mainFile": "figures\\examples\\copying\\clima-13b\\3-full.tex"
+      "warnings": 6,
+      "issues": 1,
+      "mainFile": "automatikz.tex"
     },
     {
       "name": "completeness_validator_fix_bundle",
@@ -70,7 +70,7 @@
       "project": "arXiv-1709.06005v2",
       "role": "full-document",
       "status": "preserved-with-warnings",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": true,
       "detectedFullDoc": true,
       "environmentsFound": [
@@ -106,7 +106,7 @@
       "project": "arXiv-1809.00384v1",
       "role": "full-document",
       "status": "preserved-with-warnings",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": true,
       "detectedFullDoc": true,
       "environmentsFound": [
@@ -127,7 +127,7 @@
       "project": "arXiv-1809.03842v8",
       "role": "full-document",
       "status": "preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": true,
       "detectedFullDoc": true,
       "environmentsFound": [
@@ -180,11 +180,11 @@
     {
       "filename": "automatikz.tex",
       "project": "arXiv-2310.00367v2",
-      "role": "fragment",
-      "status": "fragment-preserved",
-      "checksumMatch": false,
+      "role": "full-document",
+      "status": "preserved",
+      "checksumMatch": true,
       "hasFullDoc": true,
-      "detectedFullDoc": false,
+      "detectedFullDoc": true,
       "environmentsFound": [],
       "environmentsPreserved": []
     },
@@ -193,7 +193,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [
@@ -210,7 +210,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [
@@ -227,7 +227,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [
@@ -242,7 +242,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [
@@ -257,7 +257,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [
@@ -272,7 +272,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [
@@ -289,7 +289,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [
@@ -304,7 +304,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [
@@ -319,7 +319,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [
@@ -336,7 +336,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "full-document",
       "status": "validation-warning",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": true,
       "detectedFullDoc": true,
       "environmentsFound": [
@@ -351,7 +351,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [
@@ -366,7 +366,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [
@@ -383,7 +383,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [
@@ -400,7 +400,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "full-document",
       "status": "preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": true,
       "detectedFullDoc": true,
       "environmentsFound": [
@@ -415,7 +415,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [
@@ -430,7 +430,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [
@@ -445,7 +445,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [
@@ -462,7 +462,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [
@@ -477,7 +477,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [
@@ -492,7 +492,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [
@@ -509,7 +509,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [
@@ -524,7 +524,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [
@@ -550,7 +550,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [],
@@ -561,7 +561,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [
@@ -576,7 +576,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [
@@ -597,7 +597,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [],
@@ -608,7 +608,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [
@@ -625,7 +625,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [],
@@ -636,7 +636,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [
@@ -651,7 +651,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [
@@ -666,7 +666,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [],
@@ -677,7 +677,7 @@
       "project": "arXiv-2310.00367v2",
       "role": "fragment",
       "status": "fragment-preserved",
-      "checksumMatch": false,
+      "checksumMatch": true,
       "hasFullDoc": false,
       "detectedFullDoc": false,
       "environmentsFound": [],
@@ -809,22 +809,16 @@
   "errors": [],
   "scores": {
     "projectHandling": 100,
-    "fullDocumentClassification": 71.42857142857143,
+    "fullDocumentClassification": 85.71428571428571,
     "dependencyLibrary": 100,
     "bibliography": 100,
     "fragmentClassification": 100,
     "fragmentValidation": 100,
-    "rawPreservation": 95.1219512195122,
+    "rawPreservation": 97.5609756097561,
     "compileStatus": 50,
-    "overall": 79.61672473867596
+    "overall": 81.47502903600464
   },
   "topBugs": [
-    {
-      "file": "automatikz.tex",
-      "project": "arXiv-2310.00367v2",
-      "type": "classifier bug",
-      "detail": "Missed full document"
-    },
     {
       "file": "completeness_validator_fix_bundle\\scripts\\fixtures\\hard_research_mixture_input.txt",
       "project": "completeness_validator_fix_bundle",

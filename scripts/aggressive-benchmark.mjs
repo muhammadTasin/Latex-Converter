@@ -133,7 +133,7 @@ async function runBenchmark() {
           role: classification.fileRole,
           status: result.metadata.status,
           checksumMatch: result.metadata.outputChecksum === checksumText(pf.text),
-          hasFullDoc: /\\documentclass/.test(pf.text) && /\\begin\{document\}/.test(pf.text),
+          hasFullDoc: /^[^%\n]*\\documentclass/m.test(pf.text) && /^[^%\n]*\\begin\{document\}/m.test(pf.text),
           detectedFullDoc: classification.fileRole === "full-document"
         };
 

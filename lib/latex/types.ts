@@ -71,7 +71,9 @@ export type ConversionMetadata = {
     | "fragment-preserved"
     | "compile-skipped"
     | "validation-warning"
+    | "missing-assets"
     | "compile-failed"
+    | "converter-failed"
     | "failed";
   largeInput: boolean;
   conversionMode?: LatexSnippetMode;
