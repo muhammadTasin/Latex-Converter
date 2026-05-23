@@ -16,3 +16,4 @@ prod-server.out.log
 fixtures/aggressive/
 temp-hard-tests/
 benchmark-results/*.json
+wifi.txt 
