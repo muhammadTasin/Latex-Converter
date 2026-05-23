@@ -30,7 +30,7 @@ type ConversionMetadata = {
   outputType: "latex-document" | "raw-source" | "latex-fragment" | "bibliography" | "latex-project";
   outputFilename: string;
   outputChecksum: string;
-  status: "converted" | "preserved" | "failed";
+  status: "converted" | "preserved" | "preserved-with-warnings" | "validation-warning" | "compile-failed" | "failed";
   largeInput: boolean;
   conversionMode?: ConversionMode;
   fileRole?: "full-document" | "dependency-library" | "fragment" | "bibliography" | "markdown" | "plain-text" | "ocr-text";
